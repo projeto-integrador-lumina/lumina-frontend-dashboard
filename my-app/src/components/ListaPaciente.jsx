@@ -31,7 +31,7 @@ const ListaPaciente = ({ imagem, nome, sobrenome, nivel, status }) => {
 
         <span className="flex gap-1.5 md:gap-2">
           <Link
-            href="#"
+            href="/paciente/detalhePaciente"
             className="p-2 md:p-3 bg-amarelo hover:bg-amarelo/75 rounded-lg transition sm:flex items-center justify-center"
           >
             <img src={Eye.src || Eye} className="w-3 md:w-4" />
