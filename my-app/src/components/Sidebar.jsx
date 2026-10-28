@@ -123,7 +123,7 @@ const Sidebar = () => {
 
             <li>
               <Link
-                href="/mensagens"
+                href="/mensagem"
                 className="flex items-center gap-3 rounded-xl px-3.5 py-[12px] text-[15px] font-medium text-white/75 transition-all duration-150 hover:bg-white/10 hover:pl-[18px] hover:text-white"
               >
                 <img src={Chat.src || Chat} className="w-5 shrink-0" alt="" />
