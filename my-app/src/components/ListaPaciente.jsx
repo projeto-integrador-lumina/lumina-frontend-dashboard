@@ -37,13 +37,13 @@ const ListaPaciente = ({ imagem, nome, sobrenome, nivel, status }) => {
             <img src={Eye.src || Eye} className="w-3 md:w-4" />
           </Link>
           <Link
-            href="#"
+            href="/paciente/alterar"
             className="p-2 md:p-3 bg-turquesa hover:bg-turquesa/75 rounded-lg transition flex items-center justify-center"
           >
             <img src={Editar.src || Editar} className="w-3 md:w-4" />
           </Link>
           <Link
-            href="#"
+            href="/paciente/excluir"
             className="p-2 md:p-3 bg-salmao hover:bg-salmao/75 rounded-lg transition flex items-center justify-center"
           >
             <img src={Excluir.src || Excluir}className="w-3 md:w-4" />
