@@ -234,12 +234,12 @@ const CadastroPaciente = () => {
                     Cadastrar
                   </button>
 
-                  <a
-                    href="/pacientes"
+                  <Link
+                    href="/paciente/pacientes"
                     className="w-full sm:w-auto text-center py-3 px-6 bg-red-500 rounded-xl text-white font-medium hover:bg-red-500/80 transition"
                   >
                     Cancelar
-                  </a>
+                  </Link>
                 </div>
               </section>
             </form>
