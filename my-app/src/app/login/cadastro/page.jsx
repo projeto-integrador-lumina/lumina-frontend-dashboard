@@ -2,9 +2,11 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import axios from "axios";
 import Onboarding from "@/components/Onboarding";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
+import toast from "react-hot-toast";
 
 //assets
 import Google from "@/assets/icons/icon-google.svg";
@@ -15,26 +17,26 @@ const CadastroUsuario = () => {
 
   const [etapa, setEtapa] = useState(1);
 
-  //estados para guardar o que foi digitado
-  const [form, setForm] = useState({
-    nome: "",
-    email: "",
-    crfa: "",
-    telefone: "",
-    usuario: "",
-    senha: "",
-    confirmarSenha: "",
-  });
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [crfa, setCrfa] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [usuario, setUsuario] = useState("");
+  const [senha, setSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
 
   const [mensagemErro, setMensagemErro] = useState("");
 
   //atualiza o estado do formulário inteiro
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (name === "nome") setNome(value);
+    if (name === "email") setEmail(value);
+    if (name === "crfa") setCrfa(value);
+    if (name === "telefone") setTelefone(value);
+    if (name === "usuario") setUsuario(value);
+    if (name === "senha") setSenha(value);
+    if (name === "confirmarSenha") setConfirmarSenha(value);
   };
 
   const handleProximo = (e) => {
@@ -44,17 +46,37 @@ const CadastroUsuario = () => {
     setEtapa(2);
   };
 
-  const handleCadastrar = (e) => {
+  const handleCadastrar = async (e) => {
     e.preventDefault();
 
-    //if (form.senha !== form.confirmarSenha) {
-    //  setMensagemErro("As senhas não coincidem!");
-    //  return;
-    //}
+    if (senha !== confirmarSenha) {
+      setMensagemErro("As senhas não coincidem!");
+      return;
+    }
 
-    setMensagemErro("");
-    alert("Conta criada com sucesso!");
-    router.push("/");
+    try {
+      await axios.post("http://localhost:4000/api/fonoaudiologos", {
+        nome,
+        email,
+        crfa,
+        telefone,
+        usuario,
+        senha,
+      });
+
+      setMensagemErro("");
+      toast.success("Conta criada com sucesso! Redirecionando...");
+      setTimeout(() => {
+        router.push("/");
+      }, 2000);
+    } catch (error) {
+      console.log("Não foi possível cadastrar o usuário.", error);
+      const msg =
+        error.response?.data?.error ||
+        error.response?.data?.mensagem ||
+        "Não foi possível cadastrar o usuário.";
+      setMensagemErro(msg);
+    }
   };
 
   return (
@@ -89,10 +111,17 @@ const CadastroUsuario = () => {
             </div>
 
             {mensagemErro && (
-              <div className="rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm md:text-base text-red-700 text-center mb-8">{mensagemErro}</div>
+              <div className="rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm md:text-base text-red-700 text-center mb-8">
+                {mensagemErro}
+              </div>
             )}
 
-            <form action="" onSubmit={handleCadastrar} method="POST" className="flex flex-col gap-5">
+            <form
+              action=""
+              onSubmit={handleCadastrar}
+              method="POST"
+              className="flex flex-col gap-5"
+            >
               {etapa === 1 && (
                 <div id="step1" className="flex flex-col gap-4">
                   <p className="text-lg md:text-xl font-semibold text-text">
@@ -103,9 +132,9 @@ const CadastroUsuario = () => {
                     <Input
                       type="text"
                       label="Nome"
-                      placeholder="Digiteseu nome"
+                      placeholder="Digite seu nome"
                       name="nome"
-                      value={form.nome}
+                      value={nome}
                       onChange={handleChange}
                     ></Input>
                   </div>
@@ -114,9 +143,9 @@ const CadastroUsuario = () => {
                     <Input
                       type="text"
                       label="E-mail"
-                      placeholder="Digiteseu e-mail"
+                      placeholder="Digite seu e-mail"
                       name="email"
-                      value={form.email}
+                      value={email}
                       onChange={handleChange}
                     ></Input>
                   </div>
@@ -128,7 +157,7 @@ const CadastroUsuario = () => {
                         label="CRFa"
                         placeholder="Digite seu CRFa"
                         name="crfa"
-                        value={form.crfa}
+                        value={crfa}
                         onChange={handleChange}
                       ></Input>
                     </div>
@@ -139,13 +168,17 @@ const CadastroUsuario = () => {
                         label="Telefone"
                         placeholder="(00) 00000-0000"
                         name="telefone"
-                        value={form.telefone}
+                        value={telefone}
                         onChange={handleChange}
                       ></Input>
                     </div>
                   </div>
 
-                  <Button type="button" onClick={handleProximo} label="Próximo"></Button>
+                  <Button
+                    type="button"
+                    onClick={handleProximo}
+                    label="Próximo"
+                  ></Button>
                 </div>
               )}
 
@@ -159,9 +192,9 @@ const CadastroUsuario = () => {
                     <Input
                       type="text"
                       label="Nome de Usuário"
-                      placeholder="Digiteum nome de usuário"
+                      placeholder="Digite um nome de usuário"
                       name="usuario"
-                      value={form.usuario}
+                      value={usuario}
                       onChange={handleChange}
                     ></Input>
                   </div>
@@ -170,9 +203,9 @@ const CadastroUsuario = () => {
                     <Input
                       type="password"
                       label="Senha"
-                      placeholder="Digiteuma senha"
+                      placeholder="Digite uma senha"
                       name="senha"
-                      value={form.senha}
+                      value={senha}
                       onChange={handleChange}
                     ></Input>
                   </div>
@@ -181,9 +214,9 @@ const CadastroUsuario = () => {
                     <Input
                       type="password"
                       label="Cofirmar Senha"
-                      placeholder="Digitea senha novamente"
+                      placeholder="Digite a senha novamente"
                       name="confirmarSenha"
-                      value={form.confirmarSenha}
+                      value={confirmarSenha}
                       onChange={handleChange}
                     ></Input>
                   </div>
@@ -205,9 +238,7 @@ const CadastroUsuario = () => {
                         setEtapa(1);
                       }}
                     />
-                    <Button
-                      label="Cadastrar"
-                    />
+                    <Button label="Cadastrar" />
                   </div>
                 </div>
               )}

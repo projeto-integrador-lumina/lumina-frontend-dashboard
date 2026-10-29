@@ -1,7 +1,8 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { login } from "@/services/auth";
 
 //assets
 import Google from "@/assets/icons/icon-google.svg";
@@ -14,11 +15,21 @@ export default function Home() {
 
   const router = useRouter();
 
-  const handleEntrar = ((e) => {
+  const [ usuario, setUsuario ] = useState("");
+  const [ senha, setSenha ] = useState("");
+
+
+  const handleEntrar = async (e) => {
     e.preventDefault();
 
-    router.push("/home")
-  });
+    const result = await login(usuario, senha);
+    if (result.success) {
+      alert("Login realizado com sucesso!");
+      router.push("/home");
+    } else {
+      alert("Falha ao fazer o login. Verifique os dados e tente novamente.");
+    }
+  };
 
   return (
     <>

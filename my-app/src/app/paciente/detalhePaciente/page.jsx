@@ -2,7 +2,7 @@
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Link from "next/link";
-import React from "react";
+import React, { useState } from "react";
 
 //assets
 import Editar from "@/assets/icons/editar.svg";
@@ -12,15 +12,22 @@ import Seguranca from "@/assets/icons/seguranca.svg";
 import Back from "@/assets/icons/back.svg";
 import Profile from "@/assets/profile.png";
 
+
 const detalhePaciente = () => {
+  const [sidebarAberta, setSidebarAberta] = useState(false);
+
+
   return (
     <>
       <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
+        <Sidebar
+          isOpen={sidebarAberta}
+          onClose={() => setSidebarAberta(false)}
+        />
 
         <div className="flex-1 flex flex-col min-w-0">
           <header className="sticky top-0 z-40">
-            <Navbar />
+            <Navbar onToggleMenu={() => setSidebarAberta(!sidebarAberta)} />
           </header>
 
           <main className="text-text font-jakarta text-sm p-4 md:p-8 flex flex-col gap-4">

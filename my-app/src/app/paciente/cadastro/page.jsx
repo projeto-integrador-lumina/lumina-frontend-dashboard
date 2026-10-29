@@ -7,11 +7,12 @@ import Navbar from "@/components/Navbar";
 import Input from "@/components/Input";
 import { useRouter } from "next/navigation";
 import Radiobox from "@/components/Radiobox";
+import Selectbox from "@/components/Selectbox";
+import axios from "axios";
 
 //assets
 import Back from "@/assets/icons/back.svg";
 import Img from "@/assets/icons/img.svg";
-import Selectbox from "@/components/Selectbox";
 
 const CadastroPaciente = () => {
   const router = useRouter();
@@ -46,8 +47,11 @@ const CadastroPaciente = () => {
     { label: "Severa", value: "Severa" },
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    //validação do formulário
+    const paciente = 
 
     router.push("/pacientes");
   };
