@@ -1,9 +1,7 @@
 "use client";
 import React from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-//assets
 import Menu from "@/assets/icons/icon-menu-salmao.svg";
 import Profile from "@/assets/profile.png";
 import Home from "@/assets/icons/icon-home.svg";
@@ -15,23 +13,27 @@ import Perfil from "@/assets/icons/perfil.svg";
 import Config from "@/assets/icons/icon-config.svg";
 import Sair from "@/assets/icons/icon-exit.svg";
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   return (
     <>
       <div
-        id="sidebar-overlay"
-        className="fixed inset-0 z-40 hidden bg-black/40 opacity-0 backdrop-blur-sm transition-opacity duration-300 lg:hidden"
-      ></div>
+        onClick={onClose}
+        className={`fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+          isOpen ? "block opacity-100" : "hidden opacity-0 pointer-events-none"
+        }`}
+      />
 
       <aside
-        id="sidebar"
-        className="fixed inset-y-0 left-0 z-50 flex h-screen w-4/5 max-w-[280px] -translate-x-full flex-col bg-salmao shadow-2xl transition-transform duration-300 ease-in-out sm:w-72 lg:sticky lg:top-0 lg:w-[260px] lg:translate-x-0 lg:shadow-none"
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen w-4/5 max-w-[280px] flex-col bg-salmao shadow-2xl transition-transform duration-300 ease-in-out sm:w-72 lg:sticky lg:top-0 lg:w-[260px] lg:shadow-none ${
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
       >
         <div className="flex justify-end px-5 pt-5 lg:hidden">
           <button
             type="button"
-            id="menu-close"
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 transition hover:bg-white/20"
+            onClick={onClose}
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 transition hover:bg-white/20 cursor-pointer"
+            title="Fechar menu"
           >
             <img src={Menu.src || Menu} className="w-6" alt="Fechar menu" />
           </button>
@@ -46,7 +48,6 @@ const Sidebar = () => {
                   className="h-11 w-11 rounded-full object-cover ring-2 ring-turquesa/70"
                   alt="Foto de perfil"
                 />
-
                 <span className="absolute bottom-0.5 right-0.5 h-2.5 w-2.5 rounded-full bg-turquesa ring-2 ring-salmao"></span>
               </div>
 
@@ -54,7 +55,6 @@ const Sidebar = () => {
                 <p className="truncate text-[16px] font-semibold text-white">
                   Natasha
                 </p>
-
                 <span className="rounded-full bg-turquesa/20 px-2 py-0.5 text-[11px] text-white ring-1 ring-turquesa/40">
                   Administrador
                 </span>
@@ -72,6 +72,7 @@ const Sidebar = () => {
             <li>
               <Link
                 href="/home"
+                onClick={onClose}
                 className="flex items-center gap-3 rounded-xl px-3.5 py-[12px] text-[15px] font-medium text-white/75 transition-all duration-150 hover:bg-white/10 hover:pl-[18px] hover:text-white"
               >
                 <img src={Home.src || Home} className="w-5 shrink-0" alt="" />
@@ -82,13 +83,10 @@ const Sidebar = () => {
             <li>
               <Link
                 href="/paciente/pacientes"
+                onClick={onClose}
                 className="flex items-center gap-3 rounded-xl px-3.5 py-[12px] text-[15px] font-medium text-white/75 transition-all duration-150 hover:bg-white/10 hover:pl-[18px] hover:text-white"
               >
-                <img
-                  src={Usuario.src || Usuario}
-                  className="w-5 shrink-0"
-                  alt=""
-                />
+                <img src={Usuario.src || Usuario} className="w-5 shrink-0" alt="" />
                 <span>Pacientes</span>
               </Link>
             </li>
@@ -96,13 +94,10 @@ const Sidebar = () => {
             <li>
               <Link
                 href="/relatorios"
+                onClick={onClose}
                 className="flex items-center gap-3 rounded-xl px-3.5 py-[12px] text-[15px] font-medium text-white/75 transition-all duration-150 hover:bg-white/10 hover:pl-[18px] hover:text-white"
               >
-                <img
-                  src={Grafico.src || Grafico}
-                  className="w-5 shrink-0"
-                  alt=""
-                />
+                <img src={Grafico.src || Grafico} className="w-5 shrink-0" alt="" />
                 <span>Relatórios</span>
               </Link>
             </li>
@@ -110,13 +105,10 @@ const Sidebar = () => {
             <li>
               <Link
                 href="/atividade"
+                onClick={onClose}
                 className="flex items-center gap-3 rounded-xl px-3.5 py-[12px] text-[15px] font-medium text-white/75 transition-all duration-150 hover:bg-white/10 hover:pl-[18px] hover:text-white"
               >
-                <img
-                  src={Exercicio.src || Exercicio}
-                  className="w-5 shrink-0"
-                  alt=""
-                />
+                <img src={Exercicio.src || Exercicio} className="w-5 shrink-0" alt="" />
                 <span>Atividades</span>
               </Link>
             </li>
@@ -124,6 +116,7 @@ const Sidebar = () => {
             <li>
               <Link
                 href="/mensagem"
+                onClick={onClose}
                 className="flex items-center gap-3 rounded-xl px-3.5 py-[12px] text-[15px] font-medium text-white/75 transition-all duration-150 hover:bg-white/10 hover:pl-[18px] hover:text-white"
               >
                 <img src={Chat.src || Chat} className="w-5 shrink-0" alt="" />
@@ -140,13 +133,10 @@ const Sidebar = () => {
             <li>
               <Link
                 href="/perfil"
+                onClick={onClose}
                 className="flex items-center gap-3 rounded-xl px-3.5 py-[12px] text-[15px] font-medium text-white/75 transition-all duration-150 hover:bg-white/10 hover:pl-[18px] hover:text-white"
               >
-                <img
-                  src={Perfil.src || Perfil}
-                  className="w-5 shrink-0"
-                  alt=""
-                />
+                <img src={Perfil.src || Perfil} className="w-5 shrink-0" alt="" />
                 <span>Perfil</span>
               </Link>
             </li>
@@ -154,13 +144,10 @@ const Sidebar = () => {
             <li>
               <Link
                 href="/configuracoes"
+                onClick={onClose}
                 className="flex items-center gap-3 rounded-xl px-3.5 py-[12px] text-[15px] font-medium text-white/75 transition-all duration-150 hover:bg-white/10 hover:pl-[18px] hover:text-white"
               >
-                <img
-                  src={Config.src || Config}
-                  className="w-5 shrink-0"
-                  alt=""
-                />
+                <img src={Config.src || Config} className="w-5 shrink-0" alt="" />
                 <span>Configurações</span>
               </Link>
             </li>
@@ -172,6 +159,7 @@ const Sidebar = () => {
 
           <Link
             href="/logout"
+            onClick={onClose}
             className="group flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-3.5 py-3 text-[15px] font-medium text-white/70 transition-all hover:border-white/25 hover:bg-white/15 hover:text-white"
           >
             <img src={Sair.src || Sair} className="w-5 shrink-0" alt="" />
