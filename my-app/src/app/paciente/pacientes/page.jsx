@@ -10,6 +10,8 @@ import Add from "@/assets/icons/add.svg";
 import Filtrar from "@/assets/icons/filtrar.svg";
 import Back from "@/assets/icons/back.svg";
 import axios from "axios";
+import { getAxiosConfig } from "@/services/auth";
+import { getImageUrl } from "@/utils/page";
 
 const Pacientes = () => {
   const [sidebarAberta, setSidebarAberta] = useState(false);
@@ -18,13 +20,18 @@ const Pacientes = () => {
   useEffect(() => {
     const fetchPacientes = async () => {
       try {
-        const response = await axios.get("http://localhost:4000/api/pacientes");
+        const response = await axios.get(
+          "http://localhost:4000/api/pacientes",
+          getAxiosConfig(),
+        );
         const dados = Array.isArray(response.data)
           ? response.data
           : response.data.pacientes || [];
         setPacientes(dados);
       } catch (error) {
         console.error("Erro ao buscar pacientes:", error);
+        console.error("Resposta da API:", error.response?.data);
+        console.error("Status do erro:", error.response?.status);
       }
     };
     fetchPacientes();
@@ -42,7 +49,8 @@ const Pacientes = () => {
         <main className="text-text font-jakarta text-sm p-4 md:p-8 flex flex-col gap-4">
           <div className="hidden lg:block px-2">
             <p>
-              Home / <span className="text-salmao font-semibold">Pacientes</span>
+              Home /{" "}
+              <span className="text-salmao font-semibold">Pacientes</span>
             </p>
           </div>
 
@@ -83,9 +91,8 @@ const Pacientes = () => {
               pacientes.map((paciente) => (
                 <ListaPaciente
                   key={paciente._id || paciente.id}
-                  imagem={paciente.foto_perfil || Profile.src || Profile}
-                  nome={paciente.nome}
-                  sobrenome={paciente.sobrenome}
+                  imagem={getImageUrl(paciente.foto_perfil, Profile.src || Profile)}
+                  nome={`${paciente.nome} ${paciente.sobrenome}`}
                   nivel={paciente.nivel_gravidade || "N/A"}
                   status={paciente.ativo ? "Em andamento" : "Inativo"}
                 />

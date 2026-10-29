@@ -7,7 +7,7 @@ import Eye from "@/assets/icons/eye.svg";
 import Editar from "@/assets/icons/editar.svg";
 import Excluir from "@/assets/icons/excluir.svg";
 
-const ListaPaciente = ({ imagem, nome, sobrenome, nivel, status }) => {
+const ListaPaciente = ({ imagem, nome, nivel, status }) => {
   return (
     <>
       <div className="grid grid-cols-[2fr_1fr_1fr] md:grid-cols-[3fr_1fr_1fr] xl:grid-cols-[3fr_1fr_1fr_1fr] items-center px-4 md:px-8 py-4 md:py-5 border-b border-text/5 hover:bg-text/5 transition text-sm md:text-base">
@@ -21,7 +21,6 @@ const ListaPaciente = ({ imagem, nome, sobrenome, nivel, status }) => {
           </div>
           <p className="truncate">
             {nome}
-            <span className="hidden sm:inline">{sobrenome}</span>
           </p>
         </span>
 
