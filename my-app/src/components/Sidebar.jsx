@@ -1,7 +1,11 @@
 "use client";
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { logout } from "@/services/auth";
+import toast from "react-hot-toast";
 
+//assets
 import Menu from "@/assets/icons/icon-menu-salmao.svg";
 import Profile from "@/assets/profile.png";
 import Home from "@/assets/icons/icon-home.svg";
@@ -14,6 +18,14 @@ import Config from "@/assets/icons/icon-config.svg";
 import Sair from "@/assets/icons/icon-exit.svg";
 
 const Sidebar = ({ isOpen, onClose }) => {
+
+  const router = useRouter();
+
+  const handleSair = () => {
+    logout(router);
+    toast.success("Sessão encerrada com sucesso!");
+  };
+  
   return (
     <>
       <div
@@ -157,14 +169,14 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div className="px-3 pb-5">
           <div className="mb-3 h-px bg-white/20"></div>
 
-          <Link
-            href="/logout"
-            onClick={onClose}
+          <button
+            type="submit"
+            onClick={handleSair}
             className="group flex items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-3.5 py-3 text-[15px] font-medium text-white/70 transition-all hover:border-white/25 hover:bg-white/15 hover:text-white"
           >
             <img src={Sair.src || Sair} className="w-5 shrink-0" alt="" />
             <span>Sair</span>
-          </Link>
+          </button>
         </div>
       </aside>
     </>

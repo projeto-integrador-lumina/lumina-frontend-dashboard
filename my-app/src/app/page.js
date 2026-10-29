@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { login } from "@/services/auth";
+import toast from "react-hot-toast";
 
 //assets
 import Google from "@/assets/icons/icon-google.svg";
@@ -12,22 +13,24 @@ import Input from "@/components/Input";
 import Button from "@/components/Button";
 
 export default function Home() {
-
   const router = useRouter();
 
-  const [ usuario, setUsuario ] = useState("");
-  const [ senha, setSenha ] = useState("");
-
+  const [usuario, setUsuario] = useState("");
+  const [senha, setSenha] = useState("");
 
   const handleEntrar = async (e) => {
     e.preventDefault();
 
     const result = await login(usuario, senha);
     if (result.success) {
-      alert("Login realizado com sucesso!");
-      router.push("/home");
+      toast.success("Login realizado com sucesso!");
+      setTimeout(() => {
+        router.push("/home");
+      }, 2000);
     } else {
-      alert("Falha ao fazer o login. Verifique os dados e tente novamente.");
+      toast.error(
+        "Falha ao fazer o login. Verifique os dados e tente novamente.",
+      );
     }
   };
 
@@ -35,7 +38,6 @@ export default function Home() {
     <>
       <main>
         <div className="flex min-h-screen flex-col xl:flex-row">
-
           <Onboarding></Onboarding>
 
           <div className="flex flex-1 items-center justify-center text-text bg-fundo px-4 py-8 sm:px-6 lg:px-10">
@@ -63,13 +65,20 @@ export default function Home() {
                 </button>*/}
               </form>
 
-              <form action="" onSubmit={handleEntrar} method="POST" className="flex flex-col gap-5">
+              <form
+                action=""
+                onSubmit={handleEntrar}
+                method="POST"
+                className="flex flex-col gap-5"
+              >
                 <div className="flex flex-col gap-1">
                   <Input
                     type="text"
                     label="Usuário"
                     placeholder="Digite o nome do usuário"
                     name="usuario"
+                    onChange={(e) => setUsuario(e.target.value)}
+                    value={usuario}
                   ></Input>
                 </div>
 
@@ -79,6 +88,8 @@ export default function Home() {
                     label="Senha"
                     placeholder="Digite sua senha"
                     name="senha"
+                    onChange={(e) => setSenha(e.target.value)}
+                    value={senha}
                   ></Input>
                 </div>
 
@@ -103,8 +114,7 @@ export default function Home() {
                   color="bg-salmao"
                   colorHover="hover:bg-turquesa"
                   label="Entrar"
-                >
-                </Button>
+                ></Button>
 
                 <div>
                   <p className="text-center text-sm md:text-base lg:text-lg">
