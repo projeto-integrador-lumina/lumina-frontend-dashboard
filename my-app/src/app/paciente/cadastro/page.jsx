@@ -9,28 +9,28 @@ import Input from "@/components/Input";
 import Radiobox from "@/components/Radiobox";
 import Selectbox from "@/components/Selectbox";
 import { getAxiosConfig } from "@/services/auth";
- 
+
 //assets
 import Back from "@/assets/icons/back.svg";
 import Img from "@/assets/icons/img.svg";
- 
+
 const TIPOS_FOTO = ["image/png", "image/jpeg", "image/webp"];
 const TAMANHO_MAX_FOTO = 10 * 1024 * 1024; // 10 MB
- 
+
 const opcoesGravidade = [
   { label: "Leve", value: "Leve" },
   { label: "Moderado", value: "Moderado" },
   { label: "Grave", value: "Grave" },
   { label: "Severa", value: "Severa" },
 ];
- 
+
 const CadastroPaciente = () => {
   const router = useRouter();
   const inputFotoRef = useRef(null);
- 
+
   const [sidebarAberta, setSidebarAberta] = useState(false);
   const [enviando, setEnviando] = useState(false);
- 
+
   const [foto, setFoto] = useState(null);
   const [previewFoto, setPreviewFoto] = useState(null);
   const [nome, setNome] = useState("");
@@ -42,18 +42,20 @@ const CadastroPaciente = () => {
   const [contato, setContato] = useState("");
   const [cpf, setCpf] = useState("");
   const [endereco, setEndereco] = useState("");
- 
+
+  const [credenciais, setCredenciais] = useState(null);
+
   // libera a URL do preview quando trocar a foto ou sair da página
   useEffect(() => {
     return () => {
       if (previewFoto) URL.revokeObjectURL(previewFoto);
     };
   }, [previewFoto]);
- 
+
   const handleFoto = (e) => {
     const arquivo = e.target.files[0];
     if (!arquivo) return;
- 
+
     if (!TIPOS_FOTO.includes(arquivo.type)) {
       alert("Formato inválido. Use PNG, JPG ou WEBP.");
       e.target.value = "";
@@ -64,20 +66,20 @@ const CadastroPaciente = () => {
       e.target.value = "";
       return;
     }
- 
+
     setFoto(arquivo);
     setPreviewFoto(URL.createObjectURL(arquivo));
   };
- 
+
   const handleRemoverFoto = () => {
     setFoto(null);
     setPreviewFoto(null);
     if (inputFotoRef.current) inputFotoRef.current.value = "";
   };
- 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
- 
+
     if (
       !nome.trim() ||
       !sobrenome.trim() ||
@@ -90,7 +92,7 @@ const CadastroPaciente = () => {
       alert("Preencha todos os campos obrigatórios.");
       return;
     }
- 
+
     const formData = new FormData();
     formData.append("nome", nome);
     formData.append("sobrenome", sobrenome);
@@ -101,45 +103,43 @@ const CadastroPaciente = () => {
     formData.append("responsavel[nome]", responsavel);
     formData.append("responsavel[contato]", contato);
     formData.append("responsavel[cpf]", cpf);
- 
-    if (foto) formData.append("foto_perfil", foto); 
- 
+
+    if (foto) formData.append("foto_perfil", foto);
+
     try {
       setEnviando(true);
- 
+
       const response = await axios.post(
         "http://localhost:4000/api/pacientes",
         formData,
         getAxiosConfig(),
       );
- 
+
       if (response.status === 201) {
         const { login } = response.data;
-        alert(
-          `Paciente cadastrado com sucesso!\n\n` +
-            `Usuário: ${login.usuario}\n` +
-            `Senha provisória: ${login.senha}\n\n` +
-            `Anote agora: a senha não será exibida novamente.`,
-        );
-        router.push("/paciente/pacientes");
+
+        setCredenciais(login);
       }
     } catch (error) {
-      console.error("Erro ao cadastrar paciente:", error.response?.data || error);
+      console.error(
+        "Erro ao cadastrar paciente:",
+        error.response?.data || error,
+      );
       alert(error.response?.data?.error || "Erro ao cadastrar o paciente!");
     } finally {
       setEnviando(false);
     }
   };
- 
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar isOpen={sidebarAberta} onClose={() => setSidebarAberta(false)} />
- 
+
       <div className="flex-1 flex flex-col min-w-0">
         <header className="sticky top-0 z-40">
           <Navbar onToggleMenu={() => setSidebarAberta(!sidebarAberta)} />
         </header>
- 
+
         <main className="text-text font-jakarta text-sm p-4 sm:p-6 lg:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
             <p className="text-xs sm:text-sm text-text/60">
@@ -148,20 +148,22 @@ const CadastroPaciente = () => {
                 Cadastrar Paciente
               </span>
             </p>
- 
+
             <Link
-              href="/pacientes"
+              href="/paciente/pacientes"
               className="self-end sm:self-auto flex items-center justify-center w-10 h-10 rounded-full bg-white shadow hover:bg-gray-100 transition"
               title="Voltar"
             >
               <img src={Back.src || Back} alt="Voltar" className="w-5" />
             </Link>
           </div>
- 
+
           <div className="py-6">
-            <p className="text-xl text-center md:text-2xl">Cadastrar Paciente</p>
+            <p className="text-xl text-center md:text-2xl">
+              Cadastrar Paciente
+            </p>
           </div>
- 
+
           <form
             onSubmit={handleSubmit}
             className="bg-white shadow-lg rounded-2xl p-5 sm:p-6 lg:p-8 grid gap-8 xl:grid-cols-[280px_1fr]"
@@ -169,7 +171,7 @@ const CadastroPaciente = () => {
             {/* FOTO DE PERFIL */}
             <section className="flex flex-col items-center gap-4 xl:items-start">
               <p className="text-base font-semibold">Foto de Perfil</p>
- 
+
               <input
                 ref={inputFotoRef}
                 type="file"
@@ -179,7 +181,7 @@ const CadastroPaciente = () => {
                 className="hidden"
                 onChange={handleFoto}
               />
- 
+
               <button
                 type="button"
                 onClick={() => inputFotoRef.current?.click()}
@@ -194,14 +196,14 @@ const CadastroPaciente = () => {
                 ) : (
                   <img src={Img.src || Img} alt="" className="w-6" />
                 )}
- 
+
                 <p className="text-sm font-semibold">PNG, JPG ou WEBP</p>
                 <p className="text-xs text-text/60">(máximo 10 MB)</p>
                 <span className="text-xs text-gray-500 break-all">
                   {foto ? foto.name : "Nenhum arquivo selecionado"}
                 </span>
               </button>
- 
+
               {foto && (
                 <button
                   type="button"
@@ -212,7 +214,7 @@ const CadastroPaciente = () => {
                 </button>
               )}
             </section>
- 
+
             {/* DADOS */}
             <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
               <div className="flex flex-col gap-1">
@@ -224,7 +226,7 @@ const CadastroPaciente = () => {
                   onChange={(e) => setNome(e.target.value)}
                 />
               </div>
- 
+
               <div className="flex flex-col gap-1 md:col-span-1 xl:col-span-2">
                 <Input
                   type="text"
@@ -234,7 +236,7 @@ const CadastroPaciente = () => {
                   onChange={(e) => setSobrenome(e.target.value)}
                 />
               </div>
- 
+
               <div className="flex flex-col gap-1">
                 <Input
                   type="date"
@@ -244,7 +246,7 @@ const CadastroPaciente = () => {
                   onChange={(e) => setDataNasc(e.target.value)}
                 />
               </div>
- 
+
               <div className="flex flex-col gap-3">
                 <label className="text-base font-semibold">Sexo</label>
                 <div className="flex items-center gap-5 min-h-[48px]">
@@ -264,7 +266,7 @@ const CadastroPaciente = () => {
                   />
                 </div>
               </div>
- 
+
               <div className="flex flex-col gap-1">
                 <label className="text-base font-semibold">
                   Nível de Gravidade
@@ -278,7 +280,7 @@ const CadastroPaciente = () => {
                   placeholder="Selecione o nível"
                 />
               </div>
- 
+
               <div className="flex flex-col gap-1 md:col-span-2">
                 <Input
                   type="text"
@@ -288,7 +290,7 @@ const CadastroPaciente = () => {
                   onChange={(e) => setResponsavel(e.target.value)}
                 />
               </div>
- 
+
               <div className="flex flex-col gap-1">
                 <Input
                   type="text"
@@ -298,7 +300,7 @@ const CadastroPaciente = () => {
                   onChange={(e) => setContato(e.target.value)}
                 />
               </div>
- 
+
               <div className="flex flex-col gap-1">
                 <Input
                   type="text"
@@ -308,7 +310,7 @@ const CadastroPaciente = () => {
                   onChange={(e) => setCpf(e.target.value)}
                 />
               </div>
- 
+
               <div className="flex flex-col gap-1 md:col-span-2">
                 <Input
                   type="text"
@@ -318,7 +320,7 @@ const CadastroPaciente = () => {
                   onChange={(e) => setEndereco(e.target.value)}
                 />
               </div>
- 
+
               <div className="flex flex-col sm:flex-row gap-3 justify-center sm:justify-end pt-4 md:col-span-2 xl:col-span-3 border-t border-gray-100">
                 <button
                   type="submit"
@@ -327,9 +329,9 @@ const CadastroPaciente = () => {
                 >
                   {enviando ? "Cadastrando..." : "Cadastrar"}
                 </button>
- 
+
                 <Link
-                  href="/pacientes"
+                  href="/paciente/pacientes"
                   className="w-full sm:w-auto text-center py-3 px-6 bg-red-500 rounded-xl text-white font-medium hover:bg-red-500/80 transition"
                 >
                   Cancelar
@@ -339,8 +341,97 @@ const CadastroPaciente = () => {
           </form>
         </main>
       </div>
+
+      {credenciais && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="titulo-credenciais"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 font-jakarta"
+          >
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-turquesa/15 flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">✓</span>
+              </div>
+
+              <h2
+                id="titulo-credenciais"
+                className="text-xl font-bold text-text"
+              >
+                Paciente cadastrado!
+              </h2>
+
+              <p className="text-sm text-text/60 mt-2">
+                Copie as credenciais para entregar aos responsáveis.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs text-text/50 mb-2">USUÁRIO</p>
+
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold text-text break-all">
+                    {credenciais.usuario}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigator.clipboard.writeText(credenciais.usuario)
+                    }
+                    className="text-turquesa font-semibold text-sm cursor-pointer"
+                  >
+                    Copiar
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-xs text-text/50 mb-2">SENHA PROVISÓRIA</p>
+
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold text-text break-all">
+                    {credenciais.senha}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigator.clipboard.writeText(credenciais.senha)
+                    }
+                    className="text-turquesa font-semibold text-sm cursor-pointer"
+                  >
+                    Copiar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-xl bg-salmao/10 p-4">
+              <p className="text-sm text-text/80">
+                Atenção: esta senha será exibida somente agora. Se ela for
+                perdida, será necessário gerar uma nova senha na página de
+                detalhes do paciente.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCredenciais(null);
+                router.push("/paciente/pacientes");
+              }}
+              className="mt-6 w-full px-5 py-3 bg-turquesa rounded-xl font-semibold text-text hover:bg-turquesa/80 transition cursor-pointer"
+            >
+              Já copiei as credenciais
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
- 
+
 export default CadastroPaciente;

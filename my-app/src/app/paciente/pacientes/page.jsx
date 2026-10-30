@@ -17,6 +17,15 @@ const Pacientes = () => {
   const [sidebarAberta, setSidebarAberta] = useState(false);
   const [pacientes, setPacientes] = useState([]);
 
+  const handlePacienteExcluido = (pacienteId) => {
+    setPacientes((prevPacientes) =>
+      prevPacientes.filter(
+        (paciente) =>
+          String(paciente._id || paciente.id) !== String(pacienteId),
+      ),
+    );
+  };
+
   useEffect(() => {
     const fetchPacientes = async () => {
       try {
@@ -90,12 +99,16 @@ const Pacientes = () => {
             {pacientes.length > 0 ? (
               pacientes.map((paciente) => (
                 <ListaPaciente
-                  id={paciente._id}
                   key={paciente._id || paciente.id}
-                  imagem={getImageUrl(paciente.foto_perfil, Profile.src || Profile)}
+                  id={paciente._id || paciente.id}
+                  imagem={getImageUrl(
+                    paciente.foto_perfil,
+                    Profile.src || Profile,
+                  )}
                   nome={`${paciente.nome} ${paciente.sobrenome}`}
                   nivel={paciente.nivel_gravidade || "N/A"}
                   status={paciente.ativo ? "Em andamento" : "Inativo"}
+                  onExcluir={handlePacienteExcluido}
                 />
               ))
             ) : (
