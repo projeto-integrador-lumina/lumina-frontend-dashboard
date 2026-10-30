@@ -90,6 +90,7 @@ const Pacientes = () => {
             {pacientes.length > 0 ? (
               pacientes.map((paciente) => (
                 <ListaPaciente
+                  id={paciente._id}
                   key={paciente._id || paciente.id}
                   imagem={getImageUrl(paciente.foto_perfil, Profile.src || Profile)}
                   nome={`${paciente.nome} ${paciente.sobrenome}`}
