@@ -1,175 +1,201 @@
+
 "use client";
-import React, { useState } from "react";
+
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import toast from "react-hot-toast";
 
-//assets
 import Onboarding from "@/components/Onboarding";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
+import { getAxiosConfig } from "@/services/auth";
 
-const AlterarSenha = () => {
-  //controla o formulário multi-step
-  const [etapa, setEtapa] = useState("");
-
-  //estados para armazenar os dados digitados pra usar na próxima etapa do formulário
-  const [usuario, setUsuario] = useState("");
-  const [novaSenha, setNovaSenha] = useState("");
-  const [confirmarSenha, setConfirmarSenha] = useState("");
-  const [mensagemErro, setMensagemErro] = useState("");
-
+export default function AlterarSenha() {
   const router = useRouter();
 
-  const handleBuscarUsuario = (e) => {
-    e.preventDefault();
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
-    if (!usuario.trim()) {
-      setMensagemErro("Por favor, digite seu nome de usuário.");
+  async function handleAlterarSenha(evento) {
+    evento.preventDefault();
+
+    if (carregando) return;
+
+    if (!senhaAtual || !novaSenha || !confirmarSenha) {
+      toast.error("Preencha todos os campos.");
       return;
     }
 
-    //se o usuário existir, mantenha a mensagem de erro vazia (não exibe nada) e pula pra etapa 2 do form
-    setMensagemErro("");
-    //avança para a etapa 2
-    setEtapa(2);
-  };
-
-  const handleAlterarSenha = (e) => {
-    e.preventDefault();
+    if (novaSenha.length < 8) {
+      toast.error(
+        "A nova senha precisa ter pelo menos 8 caracteres."
+      );
+      return;
+    }
 
     if (novaSenha !== confirmarSenha) {
-      setMensagemErro("As senhas não coincidem!");
+      toast.error("As senhas não coincidem!");
       return;
     }
 
-    alert("Senha alterada com sucesso");
-    router.push("/");
-  };
+    if (senhaAtual === novaSenha) {
+      toast.error(
+        "A nova senha deve ser diferente da senha atual."
+      );
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      toast.error(
+        "Para alterar sua senha, entre na sua conta primeiro."
+      );
+      router.push("/");
+      return;
+    }
+
+    setCarregando(true);
+
+    try {
+      const resposta = await axios.put(
+        "http://localhost:4000/api/auth/senha",
+        {
+          senhaAtual,
+          novaSenha,
+        },
+        getAxiosConfig()
+      );
+
+      toast.success(
+        resposta.data?.message ||
+          "Senha alterada com sucesso!"
+      );
+
+      setSenhaAtual("");
+      setNovaSenha("");
+      setConfirmarSenha("");
+
+      router.push("/perfil");
+    } catch (error) {
+      console.error("Erro ao alterar senha:", error);
+
+      if (error.response?.status === 401) {
+        toast.error(
+          error.response?.data?.error ||
+            "Senha atual incorreta ou sessão expirada."
+        );
+      } else {
+        toast.error(
+          error.response?.data?.error ||
+            error.response?.data?.message ||
+            "Não foi possível alterar sua senha."
+        );
+      }
+    } finally {
+      setCarregando(false);
+    }
+  }
 
   return (
-    <>
-      <main>
-        <div className="flex min-h-screen flex-col font-jakarta xl:flex-row">
-          <Onboarding></Onboarding>
+    <main>
+      <div className="flex min-h-screen flex-col font-jakarta xl:flex-row">
+        <Onboarding />
 
-          <div className="flex flex-1 items-center justify-center text-text bg-fundo px-4 py-8 sm:px-6 lg:px-10">
-            <div className="flex w-full max-w-xl flex-col gap-5 rounded-3xl bg-white/70 p-5 sm:p-7 md:p-8 shadow-sm">
-              <div>
-                <p className="text-2xl md:text-3xl lg:text-4xl pb-3 text-center text-salmao font-light">
-                  Alterar Senha
-                </p>
+        <div className="flex flex-1 items-center justify-center bg-fundo px-4 py-8 text-text sm:px-6 lg:px-10">
+          <div className="flex w-full max-w-xl flex-col gap-5 rounded-3xl bg-white/70 p-5 shadow-sm sm:p-7 md:p-8">
+            <div>
+              <h1 className="pb-3 text-center text-2xl font-light text-salmao md:text-3xl lg:text-4xl">
+                Alterar senha
+              </h1>
 
-                <p className="text-sm sm:text-base text-text/70 text-center font-light">
-                  Primeiro informe o nome de usuário. Depois cadastre uma nova
-                  senha.
+              <p className="text-center text-sm font-light text-text/70 sm:text-base">
+                Para sua segurança, informe sua senha
+                atual e escolha uma nova senha de acesso.
+              </p>
+            </div>
+
+            <form
+              onSubmit={handleAlterarSenha}
+              className="flex flex-col gap-5"
+            >
+              <div className="flex flex-col gap-1">
+                <Input
+                  type="password"
+                  label="Senha atual"
+                  placeholder="Digite sua senha atual"
+                  name="senhaAtual"
+                  value={senhaAtual}
+                  onChange={(evento) =>
+                    setSenhaAtual(evento.target.value)
+                  }
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <Input
+                  type="password"
+                  label="Nova senha"
+                  placeholder="Digite sua nova senha"
+                  name="novaSenha"
+                  value={novaSenha}
+                  onChange={(evento) =>
+                    setNovaSenha(evento.target.value)
+                  }
+                />
+
+                <p className="mt-1 text-xs text-text/60">
+                  A senha deve conter pelo menos 8 caracteres.
                 </p>
               </div>
 
-              {mensagemErro && (
-                <div className="rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm md:text-base text-red-700 text-center">
-                  {mensagemErro}
-                </div>
-              )}
-              {/*
+              <div className="flex flex-col gap-1">
+                <Input
+                  type="password"
+                  label="Confirme a nova senha"
+                  placeholder="Digite novamente a nova senha"
+                  name="confirmarSenha"
+                  value={confirmarSenha}
+                  onChange={(evento) =>
+                    setConfirmarSenha(evento.target.value)
+                  }
+                />
+              </div>
 
-              <div className="rounded-2xl border border-green-300 bg-green-50 px-4 py-3 text-sm md:text-base text-green-700 text-center"></div>*/}
+              <div
+                className={
+                  carregando
+                    ? "pointer-events-none opacity-60"
+                    : ""
+                }
+              >
+                <Button
+                  color="bg-salmao"
+                  colorHover="hover:bg-turquesa"
+                  label={
+                    carregando
+                      ? "Alterando senha..."
+                      : "Salvar nova senha"
+                  }
+                />
+              </div>
 
-              {etapa == 1 && (
-                <form
-                  action=""
-                  onSubmit="handleBuscarUsuario"
-                  method="POST"
-                  className="flex flex-col gap-5"
+              <div className="flex justify-center">
+                <Link
+                  href="/perfil"
+                  className="text-center text-sm text-salmao transition hover:underline md:text-base lg:text-lg"
                 >
-                  <div className="flex flex-col gap-1">
-                    <Input
-                      type="text"
-                      label="Usuário"
-                      placeholder="Digite o nome do usuário"
-                      name="usuario"
-                      value={usuario}
-                      onChange={(e) => setUsuario(e.target.value)}
-                    ></Input>
-                  </div>
-
-                  <Button
-                    label="Procurar Usuário"
-                    color="bg-salmao"
-                    colorHover="hover:bg-turquesa"
-                  />
-
-                  <div>
-                    <Link href="/">
-                      <p className="text-center text-salmao text-sm md:text-base lg:text-lg">
-                        voltar ao Login
-                      </p>
-                    </Link>
-                  </div>
-                </form>
-              )}
-
-              {etapa === 2 && (
-                <form action="" onSubmit={handleAlterarSenha} method="POST" className="flex flex-col gap-5">
-                  <Input type="hidden" name="id" value=""></Input>
-                  <Input type="hidden" name="usuario" value=""></Input>
-
-                  <div className="rounded-2xl bg-turquesa/10 px-4 py-3 text-center">
-                    <p className="text-sm text-text/70">Alterando senha de:</p>
-
-                    <p className="font-semibold text-salmao"></p>
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <Input
-                      type="password"
-                      label="Nova Senha"
-                      placeholder="Digite a nova senha"
-                      name="novaSenha"
-                      value={novaSenha}
-                      onChange={(e) => setNovaSenha(e.target.value)}
-                    ></Input>
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <Input
-                      type="password"
-                      label="Confirme a senha"
-                      placeholder="Digite novamente a senha"
-                      name="confirmarSenha"
-                      value={confirmarSenha}
-                      onChange={(e) => setConfirmarSenha(e.target.value)}
-                    ></Input>
-                  </div>
-
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      setEtapa(1);
-                      setMensagemErro("");
-                    }}
-                  ></Button>
-
-                  <div className="flex justify-center gap-4">
-                    <Link href="/login/alterar-senha">
-                      <p className="text-center text-turquesa text-sm md:text-base lg:text-lg">
-                        procurar outro usuário
-                      </p>
-                    </Link>
-
-                    <Link href="/">
-                      <p className="text-center text-salmao text-sm md:text-base lg:text-lg">
-                        voltar ao Login
-                      </p>
-                    </Link>
-                  </div>
-                </form>
-              )}
-            </div>
+                  Voltar ao perfil
+                </Link>
+              </div>
+            </form>
           </div>
         </div>
-      </main>
-    </>
+      </div>
+    </main>
   );
-};
-
-export default AlterarSenha;
+}

@@ -1,6 +1,12 @@
+
 "use client";
-import React, { useState, useEffect } from "react";
+
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import axios from "axios";
+import toast from "react-hot-toast";
+
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import ListaPaciente from "@/components/ListaPaciente";
@@ -9,145 +15,364 @@ import Profile from "@/assets/profile.png";
 import Add from "@/assets/icons/add.svg";
 import Filtrar from "@/assets/icons/filtrar.svg";
 import Back from "@/assets/icons/back.svg";
-import axios from "axios";
+
 import { getAxiosConfig } from "@/services/auth";
 import { getImageUrl } from "@/utils/page";
 
-const Pacientes = () => {
+export default function Pacientes() {
+  const searchParams = useSearchParams();
+  const pacienteDaPesquisa = searchParams.get("paciente");
+
   const [sidebarAberta, setSidebarAberta] = useState(false);
   const [pacientes, setPacientes] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [filtro, setFiltro] = useState("todos");
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
 
-  const handlePacienteExcluido = (pacienteId) => {
-    setPacientes((prevPacientes) =>
-      prevPacientes.filter(
-        (paciente) =>
-          String(paciente._id || paciente.id) !== String(pacienteId),
-      ),
-    );
-  };
+  const pacienteDestacadoRef = useRef(null);
+  const jaRolouRef = useRef("");
 
   useEffect(() => {
-    const fetchPacientes = async () => {
+    const controller = new AbortController();
+
+    async function buscarPacientes() {
+      setCarregando(true);
+
       try {
-        const response = await axios.get(
+        const resposta = await axios.get(
           "http://localhost:4000/api/pacientes",
-          getAxiosConfig(),
+          {
+            ...getAxiosConfig(),
+            signal: controller.signal,
+          }
         );
-        const dados = Array.isArray(response.data)
-          ? response.data
-          : response.data.pacientes || [];
+
+        if (controller.signal.aborted) return;
+
+        const dados = Array.isArray(resposta.data)
+          ? resposta.data
+          : resposta.data?.pacientes || [];
+
         setPacientes(dados);
       } catch (error) {
+        if (controller.signal.aborted) return;
+
         console.error("Erro ao buscar pacientes:", error);
-        console.error("Resposta da API:", error.response?.data);
-        console.error("Status do erro:", error.response?.status);
+
+        toast.error(
+          error.response?.data?.error ||
+            "Não foi possível carregar os pacientes."
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setCarregando(false);
+        }
       }
-    };
-    fetchPacientes();
+    }
+
+    buscarPacientes();
+
+    return () => controller.abort();
   }, []);
+
+  const pacientesFiltrados = useMemo(() => {
+    if (pacienteDaPesquisa) {
+      return pacientes.filter(
+        (paciente) =>
+          String(paciente._id || paciente.id) ===
+          String(pacienteDaPesquisa)
+      );
+    }
+
+    if (filtro === "ativos") {
+      return pacientes.filter(
+        (paciente) => paciente.ativo === true
+      );
+    }
+
+    if (filtro === "inativos") {
+      return pacientes.filter(
+        (paciente) => paciente.ativo === false
+      );
+    }
+
+    return pacientes;
+  }, [pacientes, filtro, pacienteDaPesquisa]);
+
+  const pacienteEncontrado = pacienteDaPesquisa
+    ? pacientes.find(
+        (paciente) =>
+          String(paciente._id || paciente.id) ===
+          String(pacienteDaPesquisa)
+      )
+    : null;
+
+  useEffect(() => {
+    if (
+      !pacienteDaPesquisa ||
+      !pacienteEncontrado ||
+      carregando
+    ) {
+      return;
+    }
+
+    if (jaRolouRef.current === pacienteDaPesquisa) {
+      return;
+    }
+
+    jaRolouRef.current = pacienteDaPesquisa;
+
+    const timeout = setTimeout(() => {
+      pacienteDestacadoRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 150);
+
+    return () => clearTimeout(timeout);
+  }, [pacienteDaPesquisa, pacienteEncontrado, carregando]);
+
+  function handlePacienteExcluido(pacienteId) {
+    setPacientes((anteriores) =>
+      anteriores.filter(
+        (paciente) =>
+          String(paciente._id || paciente.id) !==
+          String(pacienteId)
+      )
+    );
+  }
+
+  function selecionarFiltro(novoFiltro) {
+    setFiltro(novoFiltro);
+    setFiltrosAbertos(false);
+  }
+
+  function limparPesquisa() {
+    window.history.replaceState(
+      null,
+      "",
+      "/paciente/pacientes"
+    );
+
+    jaRolouRef.current = "";
+  }
+
+  const nomePacienteEncontrado = pacienteEncontrado
+    ? [
+        pacienteEncontrado.nome,
+        pacienteEncontrado.sobrenome,
+      ]
+        .filter(Boolean)
+        .join(" ")
+    : "";
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar isOpen={sidebarAberta} onClose={() => setSidebarAberta(false)} />
+      <Sidebar
+        isOpen={sidebarAberta}
+        onClose={() => setSidebarAberta(false)}
+      />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-40">
-          <Navbar onToggleMenu={() => setSidebarAberta(!sidebarAberta)} />
+          <Navbar
+            onToggleMenu={() =>
+              setSidebarAberta((anterior) => !anterior)
+            }
+          />
         </header>
 
-        <main className="text-text font-jakarta text-sm p-4 md:p-8 flex flex-col gap-4">
-          <div className="hidden lg:block px-2">
+        <main className="flex flex-col gap-4 p-4 font-jakarta text-sm text-text md:p-8">
+          <div className="hidden px-2 lg:block">
             <p>
               Home /{" "}
-              <span className="text-salmao font-semibold">Pacientes</span>
+              <span className="font-semibold text-salmao">
+                Pacientes
+              </span>
             </p>
           </div>
 
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-wrap justify-end gap-3">
             <Link
               href="/paciente/cadastro"
-              className="px-4 py-3 bg-white shadow-lg rounded-xl flex items-center gap-2"
+              className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 shadow-lg transition hover:bg-gray-50"
             >
-              <img src={Add.src || Add} className="w-5" alt="Cadastrar" />
-              <p className="sm:hidden">Cadastrar</p>
-              <p className="hidden sm:block">Cadastrar Paciente</p>
+              <img
+                src={Add.src || Add}
+                className="w-5"
+                alt=""
+              />
+
+              <span className="sm:hidden">Cadastrar</span>
+              <span className="hidden sm:block">
+                Cadastrar Paciente
+              </span>
             </Link>
-            <button
-              type="button"
-              className="px-4 py-3 bg-white shadow-lg rounded-xl flex items-center gap-2 cursor-pointer"
-            >
-              <img src={Filtrar.src || Filtrar} className="w-5" alt="Filtrar" />
-              <p>Filtrar</p>
-            </button>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() =>
+                  setFiltrosAbertos((anterior) => !anterior)
+                }
+                className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 shadow-lg transition hover:bg-gray-50"
+              >
+                <img
+                  src={Filtrar.src || Filtrar}
+                  className="w-5"
+                  alt=""
+                />
+
+                <span>Filtrar</span>
+              </button>
+
+              {filtrosAbertos && (
+                <div className="absolute right-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-xl border border-gray-100 bg-white py-2 shadow-xl">
+                  {[
+                    { valor: "todos", rotulo: "Todos" },
+                    { valor: "ativos", rotulo: "Ativos" },
+                    { valor: "inativos", rotulo: "Inativos" },
+                  ].map((opcao) => (
+                    <button
+                      key={opcao.valor}
+                      type="button"
+                      onClick={() =>
+                        selecionarFiltro(opcao.valor)
+                      }
+                      className={`block w-full cursor-pointer px-4 py-2.5 text-left transition hover:bg-fundo ${
+                        filtro === opcao.valor
+                          ? "font-semibold text-salmao"
+                          : "text-text"
+                      }`}
+                    >
+                      {opcao.rotulo}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <Link
               href="/home"
-              className="self-end sm:self-auto flex items-center justify-center w-10 h-10 rounded-full bg-white shadow hover:bg-gray-100 transition"
+              className="flex h-10 w-10 items-center justify-center self-end rounded-full bg-white shadow transition hover:bg-gray-100 sm:self-auto"
+              title="Voltar"
             >
-              <img src={Back.src || Back} alt="Voltar" className="w-5" />
+              <img
+                src={Back.src || Back}
+                alt="Voltar"
+                className="w-5"
+              />
             </Link>
           </div>
 
-          <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-            <div className="grid grid-cols-[2fr_1fr_1fr] md:grid-cols-[3fr_1fr_1fr] xl:grid-cols-[3fr_1fr_1fr_1fr] font-semibold text-sm md:text-base border-b border-text/15 px-4 md:px-8 py-5">
+          {pacienteDaPesquisa && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-turquesa/30 bg-turquesa/10 px-4 py-3">
+              <div>
+                <p className="text-xs text-text/60">
+                  Resultado da pesquisa
+                </p>
+
+                <p className="font-semibold text-text">
+                  {carregando
+                    ? "Localizando paciente..."
+                    : pacienteEncontrado
+                      ? nomePacienteEncontrado
+                      : "Paciente não encontrado"}
+                </p>
+              </div>
+
+              <Link
+                href="/paciente/pacientes"
+                onClick={limparPesquisa}
+                className="rounded-lg bg-white px-4 py-2 font-semibold text-salmao shadow-sm transition hover:bg-gray-50"
+              >
+                Ver todos
+              </Link>
+            </div>
+          )}
+
+          <div className="overflow-hidden rounded-xl bg-white shadow-lg">
+            <div className="grid grid-cols-[2fr_1fr_1fr] border-b border-text/15 px-4 py-5 text-sm font-semibold md:grid-cols-[3fr_1fr_1fr] md:px-8 md:text-base xl:grid-cols-[3fr_1fr_1fr_1fr]">
               <span>Paciente</span>
               <span>Nível</span>
-              <span className="hidden xl:block">Status</span>
+              <span className="hidden xl:block">
+                Status
+              </span>
               <span>Ações</span>
             </div>
 
-            {pacientes.length > 0 ? (
-              pacientes.map((paciente) => (
-                <ListaPaciente
-                  key={paciente._id || paciente.id}
-                  id={paciente._id || paciente.id}
-                  imagem={getImageUrl(
-                    paciente.foto_perfil,
-                    Profile.src || Profile,
-                  )}
-                  nome={`${paciente.nome} ${paciente.sobrenome}`}
-                  nivel={paciente.nivel_gravidade || "N/A"}
-                  status={paciente.ativo ? "Em andamento" : "Inativo"}
-                  onExcluir={handlePacienteExcluido}
-                />
-              ))
+            {carregando ? (
+              <div className="p-10 text-center text-text/60">
+                Carregando pacientes...
+              </div>
+            ) : pacientesFiltrados.length > 0 ? (
+              pacientesFiltrados.map((paciente) => {
+                const id = paciente._id || paciente.id;
+
+                const destacado =
+                  pacienteDaPesquisa &&
+                  String(id) === String(pacienteDaPesquisa);
+
+                return (
+                  <div
+                    key={id}
+                    ref={
+                      destacado
+                        ? pacienteDestacadoRef
+                        : null
+                    }
+                    className={
+                      destacado
+                        ? "bg-turquesa/10 ring-2 ring-inset ring-turquesa/40"
+                        : ""
+                    }
+                  >
+                    <ListaPaciente
+                      id={id}
+                      imagem={getImageUrl(
+                        paciente.foto_perfil,
+                        Profile.src || Profile
+                      )}
+                      nome={[
+                        paciente.nome,
+                        paciente.sobrenome,
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      nivel={
+                        paciente.nivel_gravidade || "N/A"
+                      }
+                      status={
+                        paciente.ativo
+                          ? "Em andamento"
+                          : "Inativo"
+                      }
+                      onExcluir={handlePacienteExcluido}
+                    />
+                  </div>
+                );
+              })
             ) : (
               <div className="p-8 text-center text-text/60">
-                Nenhum paciente encontrado.
+                {pacienteDaPesquisa
+                  ? "O paciente selecionado não foi encontrado."
+                  : "Nenhum paciente encontrado."}
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 md:px-8 py-5">
-              <span className="text-text/50 text-xs md:text-sm">
-                Mostrando {pacientes.length} pacientes
+            <div className="flex flex-col items-center justify-between gap-4 px-4 py-5 sm:flex-row md:px-8">
+              <span className="text-xs text-text/50 md:text-sm">
+                Mostrando {pacientesFiltrados.length} de{" "}
+                {pacientes.length} pacientes
               </span>
 
-              <div className="flex gap-1.5">
-                <button
-                  type="button"
-                  className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl border border-gray-200 opacity-30 cursor-not-allowed text-base"
-                >
-                  &#8249;
-                </button>
-                <button
-                  type="button"
-                  className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl border border-salmao bg-salmao text-white font-medium text-sm"
-                >
-                  1
-                </button>
-                <button
-                  type="button"
-                  className="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl border border-gray-200 hover:border-turquesa hover:text-turquesa hover:bg-turquesa/10 transition text-base"
-                >
-                  &#8250;
-                </button>
-              </div>
+              <span className="rounded-lg bg-salmao px-3 py-1.5 text-sm font-medium text-white">
+                1
+              </span>
             </div>
           </div>
         </main>
       </div>
     </div>
   );
-};
-
-export default Pacientes;
+}
