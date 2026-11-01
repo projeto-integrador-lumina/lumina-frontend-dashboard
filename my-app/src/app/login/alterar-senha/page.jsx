@@ -1,9 +1,7 @@
-
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -12,28 +10,60 @@ import Input from "@/components/Input";
 import Button from "@/components/Button";
 import { getAxiosConfig } from "@/services/auth";
 
-export default function AlterarSenha() {
-  const router = useRouter();
+const API_URL = "http://localhost:4000";
 
-  const [senhaAtual, setSenhaAtual] = useState("");
+export default function AlterarSenha() {
+  const [usuario, setUsuario] = useState("");
+  const [usuarioEncontrado, setUsuarioEncontrado] = useState(false);
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [carregando, setCarregando] = useState(false);
 
-  async function handleAlterarSenha(evento) {
+  async function buscarUsuario(evento) {
     evento.preventDefault();
 
     if (carregando) return;
 
-    if (!senhaAtual || !novaSenha || !confirmarSenha) {
-      toast.error("Preencha todos os campos.");
+    if (!usuario.trim()) {
+      toast.error("Digite o nome de usuário.");
+      return;
+    }
+
+    setCarregando(true);
+
+    try {
+      const resposta = await axios.post(
+        `${API_URL}/api/auth/recuperar-senha/buscar`,
+        {
+          usuario: usuario.trim(),
+        },
+      );
+
+      if (resposta.data?.encontrado) {
+        setUsuarioEncontrado(true);
+        toast.success("Usuário encontrado!");
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.error || "Não foi possível buscar o usuário.",
+      );
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function salvarNovaSenha(evento) {
+    evento.preventDefault();
+
+    if (carregando) return;
+
+    if (!novaSenha || !confirmarSenha) {
+      toast.error("Preencha os campos de senha.");
       return;
     }
 
     if (novaSenha.length < 8) {
-      toast.error(
-        "A nova senha precisa ter pelo menos 8 caracteres."
-      );
+      toast.error("A nova senha precisa ter pelo menos 8 caracteres.");
       return;
     }
 
@@ -42,63 +72,43 @@ export default function AlterarSenha() {
       return;
     }
 
-    if (senhaAtual === novaSenha) {
-      toast.error(
-        "A nova senha deve ser diferente da senha atual."
-      );
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      toast.error(
-        "Para alterar sua senha, entre na sua conta primeiro."
-      );
-      router.push("/");
-      return;
-    }
-
     setCarregando(true);
 
     try {
       const resposta = await axios.put(
-        "http://localhost:4000/api/auth/senha",
+        `${API_URL}/api/auth/recuperar-senha`,
         {
-          senhaAtual,
+          usuario: usuario.trim(),
           novaSenha,
         },
-        getAxiosConfig()
+        getAxiosConfig(),
       );
 
-      toast.success(
-        resposta.data?.message ||
-          "Senha alterada com sucesso!"
-      );
+      toast.success(resposta.data?.message || "Senha alterada com sucesso!");
 
-      setSenhaAtual("");
+      setUsuario("");
+      setUsuarioEncontrado(false);
       setNovaSenha("");
       setConfirmarSenha("");
-
-      router.push("/perfil");
     } catch (error) {
-      console.error("Erro ao alterar senha:", error);
-
-      if (error.response?.status === 401) {
+      if (error.response?.status === 401 || error.response?.status === 403) {
         toast.error(
-          error.response?.data?.error ||
-            "Senha atual incorreta ou sessão expirada."
+          "É necessário estar autenticado como fonoaudiólogo para concluir esta redefinição de teste.",
         );
       } else {
         toast.error(
-          error.response?.data?.error ||
-            error.response?.data?.message ||
-            "Não foi possível alterar sua senha."
+          error.response?.data?.error || "Não foi possível alterar a senha.",
         );
       }
     } finally {
       setCarregando(false);
     }
+  }
+
+  function alterarUsuario() {
+    setUsuarioEncontrado(false);
+    setNovaSenha("");
+    setConfirmarSenha("");
   }
 
   return (
@@ -114,85 +124,98 @@ export default function AlterarSenha() {
               </h1>
 
               <p className="text-center text-sm font-light text-text/70 sm:text-base">
-                Para sua segurança, informe sua senha
-                atual e escolha uma nova senha de acesso.
+                Informe o nome de usuário para localizar a conta e cadastrar uma
+                nova senha.
               </p>
             </div>
 
-            <form
-              onSubmit={handleAlterarSenha}
-              className="flex flex-col gap-5"
-            >
-              <div className="flex flex-col gap-1">
+            {!usuarioEncontrado ? (
+              <form onSubmit={buscarUsuario} className="flex flex-col gap-5">
                 <Input
-                  type="password"
-                  label="Senha atual"
-                  placeholder="Digite sua senha atual"
-                  name="senhaAtual"
-                  value={senhaAtual}
-                  onChange={(evento) =>
-                    setSenhaAtual(evento.target.value)
-                  }
+                  type="text"
+                  label="Nome de usuário"
+                  placeholder="Digite seu nome de usuário"
+                  name="usuario"
+                  value={usuario}
+                  onChange={(evento) => setUsuario(evento.target.value)}
                 />
-              </div>
 
-              <div className="flex flex-col gap-1">
+                <div
+                  className={`w-full ${carregando ? "pointer-events-none opacity-60" : ""}`}
+                >
+                  <div className="w-full [&>button]:w-full">
+                    <Button
+                      color="bg-salmao"
+                      colorHover="hover:bg-turquesa"
+                      label={
+                        carregando ? "Buscando usuário..." : "Buscar usuário"
+                      }
+                    />
+                  </div>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={salvarNovaSenha} className="flex flex-col gap-5">
+                <div className="rounded-xl border border-turquesa/40 bg-turquesa/10 p-4">
+                  <p className="text-sm font-semibold">Usuário encontrado</p>
+
+                  <p className="mt-1 break-all text-sm text-text/70">
+                    {usuario}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={alterarUsuario}
+                    className="mt-2 cursor-pointer text-xs font-semibold text-salmao hover:underline"
+                  >
+                    Buscar outro usuário
+                  </button>
+                </div>
+
                 <Input
                   type="password"
                   label="Nova senha"
                   placeholder="Digite sua nova senha"
                   name="novaSenha"
                   value={novaSenha}
-                  onChange={(evento) =>
-                    setNovaSenha(evento.target.value)
-                  }
+                  onChange={(evento) => setNovaSenha(evento.target.value)}
                 />
 
-                <p className="mt-1 text-xs text-text/60">
+                <p className="-mt-3 text-xs text-text/60">
                   A senha deve conter pelo menos 8 caracteres.
                 </p>
-              </div>
 
-              <div className="flex flex-col gap-1">
                 <Input
                   type="password"
                   label="Confirme a nova senha"
                   placeholder="Digite novamente a nova senha"
                   name="confirmarSenha"
                   value={confirmarSenha}
-                  onChange={(evento) =>
-                    setConfirmarSenha(evento.target.value)
-                  }
+                  onChange={(evento) => setConfirmarSenha(evento.target.value)}
                 />
-              </div>
 
-              <div
-                className={
-                  carregando
-                    ? "pointer-events-none opacity-60"
-                    : ""
-                }
-              >
-                <Button
-                  color="bg-salmao"
-                  colorHover="hover:bg-turquesa"
-                  label={
-                    carregando
-                      ? "Alterando senha..."
-                      : "Salvar nova senha"
-                  }
-                />
-              </div>
-
-              <div className="flex justify-center">
-                <Link
-                  href="/perfil"
-                  className="text-center text-sm text-salmao transition hover:underline md:text-base lg:text-lg"
+                <div
+                  className={`w-full ${carregando ? "pointer-events-none opacity-60" : ""}`}
                 >
-                  Voltar ao perfil
-                </Link>
-              </div>
-            </form>
+                  <div className="w-full [&>button]:w-full">
+                    <Button
+                      color="bg-salmao"
+                      colorHover="hover:bg-turquesa"
+                      label={carregando ? "Salvando..." : "Salvar nova senha"}
+                    />
+                  </div>
+                </div>
+              </form>
+            )}
+
+            <div className="flex justify-center">
+              <Link
+                href="/"
+                className="text-center text-sm text-salmao transition hover:underline md:text-base lg:text-lg"
+              >
+                Voltar ao login
+              </Link>
+            </div>
           </div>
         </div>
       </div>
