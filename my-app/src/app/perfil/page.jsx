@@ -237,7 +237,7 @@ const Perfil = () => {
                         </div>
 
                         <Link
-                          href="/perfil/editar"
+                          href="/perfil/alterar"
                           className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-salmao px-6 py-3 text-sm font-semibold text-white shadow-[0_5px_15px_rgba(237,137,129,0.2)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#e77d75] hover:shadow-lg sm:w-auto"
                         >
                           <svg

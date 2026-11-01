@@ -251,12 +251,6 @@ function Calendario({ atividades }) {
         <span className="h-3 w-3 rounded bg-turquesa/30" />
         Dia com prática registrada
       </div>
-
-      <p className="mt-3 text-xs leading-relaxed text-text/50">
-        O resumo da API informa as práticas dos últimos
-        7 dias. Datas anteriores não são classificadas
-        neste calendário.
-      </p>
     </div>
   );
 }

@@ -1,286 +1,323 @@
 "use client";
-import React, { useState } from "react";
+
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
+import toast from "react-hot-toast";
+
 import Onboarding from "@/components/Onboarding";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
-import toast from "react-hot-toast";
 
-//assets
-import Google from "@/assets/icons/icon-google.svg";
-import Facebook from "@/assets/icons/icon-facebook.svg";
+const API_URL = "http://localhost:4000/api";
 
-const CadastroUsuario = () => {
+export default function CadastroUsuario() {
   const router = useRouter();
 
   const [etapa, setEtapa] = useState(1);
-
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [crfa, setCrfa] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [usuario, setUsuario] = useState("");
-  const [senha, setSenha] = useState("");
-  const [confirmarSenha, setConfirmarSenha] = useState("");
-
+  const [carregando, setCarregando] = useState(false);
   const [mensagemErro, setMensagemErro] = useState("");
 
-  //atualiza o estado do formulário inteiro
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "nome") setNome(value);
-    if (name === "email") setEmail(value);
-    if (name === "crfa") setCrfa(value);
-    if (name === "telefone") setTelefone(value);
-    if (name === "usuario") setUsuario(value);
-    if (name === "senha") setSenha(value);
-    if (name === "confirmarSenha") setConfirmarSenha(value);
-  };
+  const [formulario, setFormulario] = useState({
+    nome: "",
+    email: "",
+    crfa: "",
+    telefone: "",
+    usuario: "",
+    senha: "",
+    confirmarSenha: "",
+  });
 
-  const handleProximo = (e) => {
-    e.preventDefault();
+  function handleChange(evento) {
+    const { name, value } = evento.target;
+
+    setFormulario((anterior) => ({
+      ...anterior,
+      [name]: value,
+    }));
+
+    if (mensagemErro) {
+      setMensagemErro("");
+    }
+  }
+
+  function mostrarErro(mensagem) {
+    setMensagemErro(mensagem);
+    toast.error(mensagem);
+  }
+
+  function validarDadosPessoais() {
+    const { nome, email, crfa, telefone } = formulario;
+
+    if (!nome.trim() || !email.trim() || !crfa.trim() || !telefone.trim()) {
+      mostrarErro("Preencha todos os dados pessoais.");
+      return false;
+    }
+
+    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailValido.test(email.trim())) {
+      mostrarErro("Informe um e-mail válido.");
+      return false;
+    }
+
+    return true;
+  }
+
+  function handleProximo() {
+    if (!validarDadosPessoais()) return;
 
     setMensagemErro("");
     setEtapa(2);
-  };
+  }
 
-  const handleCadastrar = async (e) => {
-    e.preventDefault();
+  function handleVoltar() {
+    setMensagemErro("");
+    setEtapa(1);
+  }
+
+  async function handleCadastrar(evento) {
+    evento.preventDefault();
+
+    if (carregando) return;
+
+    if (etapa === 1) {
+      handleProximo();
+      return;
+    }
+
+    if (!validarDadosPessoais()) {
+      setEtapa(1);
+      return;
+    }
+
+    const { usuario, senha, confirmarSenha } = formulario;
+
+    if (!usuario.trim() || !senha || !confirmarSenha) {
+      mostrarErro("Preencha todos os dados de acesso.");
+      return;
+    }
+
+    if (senha.length < 8) {
+      mostrarErro("A senha precisa ter pelo menos 8 caracteres.");
+      return;
+    }
 
     if (senha !== confirmarSenha) {
-      setMensagemErro("As senhas não coincidem!");
+      mostrarErro("As senhas não coincidem!");
       return;
     }
 
     try {
-      await axios.post("http://localhost:4000/api/fonoaudiologos", {
-        nome,
-        email,
-        crfa,
-        telefone,
-        usuario,
+      setCarregando(true);
+      setMensagemErro("");
+
+      const resposta = await axios.post(`${API_URL}/fonoaudiologos`, {
+        nome: formulario.nome.trim(),
+        email: formulario.email.trim().toLowerCase(),
+        crfa: formulario.crfa.trim(),
+        telefone: formulario.telefone.trim(),
+        usuario: usuario.trim().toLowerCase(),
         senha,
       });
 
-      setMensagemErro("");
-      toast.success("Conta criada com sucesso! Redirecionando...");
-      setTimeout(() => {
-        router.push("/");
-      }, 2000);
+      toast.success(resposta.data?.message || "Conta criada com sucesso!");
+
+      router.push("/");
     } catch (error) {
-      console.log("Não foi possível cadastrar o usuário.", error);
-      const msg =
+      const mensagem =
         error.response?.data?.error ||
         error.response?.data?.mensagem ||
         "Não foi possível cadastrar o usuário.";
-      setMensagemErro(msg);
+
+      mostrarErro(mensagem);
+    } finally {
+      setCarregando(false);
     }
-  };
+  }
 
   return (
     <main>
       <div className="flex min-h-screen flex-col font-jakarta xl:flex-row">
-        <Onboarding></Onboarding>
+        <Onboarding />
 
-        <div className="flex flex-1 items-center justify-center text-text bg-fundo px-4 py-8 sm:px-6 lg:px-10">
-          <div className="w-full max-w-xl rounded-3xl bg-white/70 p-5 sm:p-7 md:p-8 shadow-sm">
-            <p className="text-2xl md:text-3xl lg:text-4xl text-center text-salmao font-light">
+        <div className="flex flex-1 items-center justify-center bg-fundo px-4 py-8 text-text sm:px-6 lg:px-10">
+          <div className="w-full max-w-xl rounded-3xl bg-white/70 p-5 shadow-sm sm:p-7 md:p-8">
+            <h1 className="text-center text-2xl font-light text-salmao md:text-3xl lg:text-4xl">
               Crie uma conta
-            </p>
+            </h1>
 
-            <div className="py-8 flex items-center gap-3">
+            <div className="flex items-center gap-3 py-8">
               <div className="flex flex-1 items-center gap-2">
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold text-white ${etapa > 1 ? "bg-turquesa" : "bg-salmao"}`}
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white ${
+                    etapa === 1 ? "bg-salmao" : "bg-turquesa"
+                  }`}
                 >
                   1
                 </div>
-                <div className="h-1 flex-1 rounded-full bg-salmao"></div>
+
+                <div
+                  className={`h-1 flex-1 rounded-full ${
+                    etapa === 1 ? "bg-salmao" : "bg-turquesa"
+                  }`}
+                />
               </div>
 
               <div className="flex flex-1 items-center gap-2">
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full bg-input-gray text-sm font-semibold text-white ${etapa >= 1 ? "bg-salmao" : "bg-salmao"}`}
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white ${
+                    etapa === 2 ? "bg-salmao" : "bg-gray-300"
+                  }`}
                 >
                   2
                 </div>
-                <div className="h-1 flex-1 rounded-full bg-input-gray"></div>
+
+                <div
+                  className={`h-1 flex-1 rounded-full ${
+                    etapa === 2 ? "bg-salmao" : "bg-gray-200"
+                  }`}
+                />
               </div>
             </div>
 
             {mensagemErro && (
-              <div className="rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm md:text-base text-red-700 text-center mb-8">
+              <div className="mb-6 rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-center text-sm text-red-700 md:text-base">
                 {mensagemErro}
               </div>
             )}
 
             <form
-              action=""
               onSubmit={handleCadastrar}
-              method="POST"
               className="flex flex-col gap-5"
+              noValidate
             >
               {etapa === 1 && (
-                <div id="step1" className="flex flex-col gap-4">
-                  <p className="text-lg md:text-xl font-semibold text-text">
+                <div className="flex flex-col gap-4">
+                  <h2 className="text-lg font-semibold text-text md:text-xl">
                     Dados pessoais
-                  </p>
+                  </h2>
 
-                  <div className="flex flex-col gap-1">
-                    <Input
-                      type="text"
-                      label="Nome"
-                      placeholder="Digite seu nome"
-                      name="nome"
-                      value={nome}
-                      onChange={handleChange}
-                    ></Input>
-                  </div>
+                  <Input
+                    type="text"
+                    label="Nome"
+                    placeholder="Digite seu nome"
+                    name="nome"
+                    value={formulario.nome}
+                    onChange={handleChange}
+                  />
 
-                  <div className="flex flex-col gap-1">
-                    <Input
-                      type="text"
-                      label="E-mail"
-                      placeholder="Digite seu e-mail"
-                      name="email"
-                      value={email}
-                      onChange={handleChange}
-                    ></Input>
-                  </div>
+                  <Input
+                    type="email"
+                    label="E-mail"
+                    placeholder="Digite seu e-mail"
+                    name="email"
+                    value={formulario.email}
+                    onChange={handleChange}
+                  />
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex w-full flex-col gap-1">
                       <Input
                         type="text"
                         label="CRFa"
                         placeholder="Digite seu CRFa"
                         name="crfa"
-                        value={crfa}
+                        value={formulario.crfa}
                         onChange={handleChange}
-                      ></Input>
+                      />
                     </div>
 
-                    <div className="flex flex-col gap-1">
+                    <div className="flex w-full flex-col gap-1">
                       <Input
-                        type="text"
+                        type="tel"
                         label="Telefone"
                         placeholder="(00) 00000-0000"
                         name="telefone"
-                        value={telefone}
+                        value={formulario.telefone}
                         onChange={handleChange}
-                      ></Input>
+                      />
                     </div>
                   </div>
 
-                  <Button
-                    type="button"
-                    onClick={handleProximo}
-                    label="Próximo"
-                  ></Button>
+                  <Button label="Próximo" />
                 </div>
               )}
 
               {etapa === 2 && (
                 <div className="flex flex-col gap-4">
-                  <p className="text-lg md:text-xl font-semibold text-text">
+                  <h2 className="text-lg font-semibold text-text md:text-xl">
                     Dados de acesso
+                  </h2>
+
+                  <Input
+                    type="text"
+                    label="Nome de usuário"
+                    placeholder="Digite um nome de usuário"
+                    name="usuario"
+                    value={formulario.usuario}
+                    onChange={handleChange}
+                  />
+
+                  <Input
+                    type="password"
+                    label="Senha"
+                    placeholder="Digite uma senha"
+                    name="senha"
+                    value={formulario.senha}
+                    onChange={handleChange}
+                  />
+
+                  <p className="-mt-2 text-xs text-text/60">
+                    A senha deve conter pelo menos 8 caracteres.
                   </p>
 
-                  <div className="flex flex-col gap-1">
-                    <Input
-                      type="text"
-                      label="Nome de Usuário"
-                      placeholder="Digite um nome de usuário"
-                      name="usuario"
-                      value={usuario}
-                      onChange={handleChange}
-                    ></Input>
-                  </div>
+                  <Input
+                    type="password"
+                    label="Confirmar senha"
+                    placeholder="Digite a senha novamente"
+                    name="confirmarSenha"
+                    value={formulario.confirmarSenha}
+                    onChange={handleChange}
+                  />
 
-                  <div className="flex flex-col gap-1">
-                    <Input
-                      type="password"
-                      label="Senha"
-                      placeholder="Digite uma senha"
-                      name="senha"
-                      value={senha}
-                      onChange={handleChange}
-                    ></Input>
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <Input
-                      type="password"
-                      label="Cofirmar Senha"
-                      placeholder="Digite a senha novamente"
-                      name="confirmarSenha"
-                      value={confirmarSenha}
-                      onChange={handleChange}
-                    ></Input>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Button
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <button
                       type="button"
-                      label="Voltar"
-                      color="bg-white"
-                      colorHover="hover:bg-salmao"
-                      textColor="bg-text"
-                      textColorHover="hover:text-white"
-                      border="border"
-                      borderColor="border-salmao"
-                      formNoValidate
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setMensagemErro("");
-                        setEtapa(1);
-                      }}
-                    />
-                    <Button label="Cadastrar" />
+                      onClick={handleVoltar}
+                      disabled={carregando}
+                      className="min-h-12 rounded-full border border-salmao bg-white px-6 py-3 font-semibold text-salmao transition hover:bg-salmao hover:text-white disabled:opacity-60"
+                    >
+                      Voltar
+                    </button>
+
+                    <div
+                      className={`w-full [&>button]:w-full ${
+                        carregando ? "pointer-events-none opacity-60" : ""
+                      }`}
+                    >
+                      <Button
+                        label={carregando ? "Cadastrando..." : "Cadastrar"}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
 
-              <div>
-                <p className="text-center md:text-base lg:text-lg">
-                  Já tem uma conta?
-                  <Link href="/" className="text-salmao font-semibold">
-                    Entrar
-                  </Link>
-                </p>
-              </div>
-
-              <div>
-                <p className="text-center text-sm md:text-base lg:text-lg">
-                  ou conecte-se com
-                </p>
-              </div>
-
-              <div className="flex gap-4 justify-center">
-                <Link href="#">
-                  <img
-                    src={Google.src || Google}
-                    className="w-12 lg:w-14 xl:w-auto xl:h-auto"
-                    alt="Google"
-                  />
+              <p className="text-center text-sm md:text-base lg:text-lg">
+                Já tem uma conta?{" "}
+                <Link
+                  href="/"
+                  className="font-semibold text-salmao hover:underline"
+                >
+                  Entrar
                 </Link>
-
-                <Link href="#">
-                  <img
-                    src={Facebook.src || Facebook}
-                    className="w-12 lg:w-14 xl:w-auto xl:h-auto"
-                    alt="Facebook"
-                  />
-                </Link>
-              </div>
+              </p>
             </form>
           </div>
         </div>
       </div>
     </main>
   );
-};
-
-export default CadastroUsuario;
+}

@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { getAxiosConfig, logout } from "@/services/auth";
+import Back from "@/assets/icons/back.svg";
 
 const API_URL = "http://localhost:4000";
 const CHAVE_PREFERENCIAS = "lola_preferencias_painel";
@@ -257,7 +258,7 @@ export default function Configuracoes() {
                 className="flex h-10 w-10 items-center justify-center self-end rounded-full bg-white shadow transition hover:bg-gray-100 sm:self-auto"
               >
                 <img
-                  src="/imgs/icons/back.svg"
+                  src={Back.src || Back}
                   alt="Voltar"
                   className="w-5"
                 />
