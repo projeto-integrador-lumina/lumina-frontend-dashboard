@@ -116,7 +116,7 @@ export default function CadastroUsuario() {
       setCarregando(true);
       setMensagemErro("");
 
-      const resposta = await axios.post(`${API_URL}/fonoaudiologos`, {
+      const resposta = await axios.post(`${API_URL}/api/fonoaudiologos`, {
         nome: formulario.nome.trim(),
         email: formulario.email.trim().toLowerCase(),
         crfa: formulario.crfa.trim(),
