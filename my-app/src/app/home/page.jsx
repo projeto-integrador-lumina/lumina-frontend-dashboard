@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -22,7 +23,10 @@ import Clock from "@/assets/icons/clock.svg";
 
 import { getAxiosConfig } from "@/services/auth";
 
-const API_URL = "http://localhost:4000";
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000"
+).replace(/\/+$/, "");
 
 function formatarMinutos(valor) {
   const minutos = Number(valor) || 0;
@@ -68,7 +72,11 @@ function imagemPaciente(caminho) {
   return `${API_URL}${caminho.startsWith("/") ? "" : "/"}${caminho}`;
 }
 
-function Avatar({ nome, foto, tamanho = "h-11 w-11" }) {
+function Avatar({
+  nome,
+  foto,
+  tamanho = "h-11 w-11",
+}) {
   const [falhou, setFalhou] = useState(false);
   const src = imagemPaciente(foto);
 
@@ -85,7 +93,9 @@ function Avatar({ nome, foto, tamanho = "h-11 w-11" }) {
         />
       ) : (
         <span aria-label={nome}>
-          {String(nome || "P").charAt(0).toUpperCase()}
+          {String(nome || "P")
+            .charAt(0)
+            .toUpperCase()}
         </span>
       )}
     </div>
@@ -137,34 +147,61 @@ function Indicador({
 function Calendario({ atividades }) {
   const [mesAtual, setMesAtual] = useState(() => {
     const hoje = new Date();
-    return new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+
+    return new Date(
+      hoje.getFullYear(),
+      hoje.getMonth(),
+      1
+    );
   });
 
   const hoje = new Date();
   const ano = mesAtual.getFullYear();
   const mes = mesAtual.getMonth();
 
-  const primeiroDia = new Date(ano, mes, 1).getDay();
-  const quantidadeDias = new Date(ano, mes + 1, 0).getDate();
+  const primeiroDia = new Date(
+    ano,
+    mes,
+    1
+  ).getDay();
+
+  const quantidadeDias = new Date(
+    ano,
+    mes + 1,
+    0
+  ).getDate();
 
   const diasComPratica = new Set(
     atividades
-      .filter((item) => Number(item.tentativas) > 0)
-      .map((item) => String(item.data).slice(0, 10))
+      .filter(
+        (item) => Number(item.tentativas) > 0
+      )
+      .map((item) =>
+        String(item.data).slice(0, 10)
+      )
   );
 
   const celulas = [
-    ...Array.from({ length: primeiroDia }, () => null),
-    ...Array.from({ length: quantidadeDias }, (_, i) => i + 1),
+    ...Array.from(
+      { length: primeiroDia },
+      () => null
+    ),
+    ...Array.from(
+      { length: quantidadeDias },
+      (_, i) => i + 1
+    ),
   ];
 
-  const tituloMes = mesAtual.toLocaleDateString("pt-BR", {
-    month: "long",
-    year: "numeric",
-  });
+  const tituloMes =
+    mesAtual.toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric",
+    });
 
   function mudarMes(diferenca) {
-    setMesAtual(new Date(ano, mes + diferenca, 1));
+    setMesAtual(
+      new Date(ano, mes + diferenca, 1)
+    );
   }
 
   return (
@@ -194,25 +231,40 @@ function Calendario({ atividades }) {
       </div>
 
       <div className="grid grid-cols-7 gap-1 text-center">
-        {["D", "S", "T", "Q", "Q", "S", "S"].map(
-          (dia, index) => (
-            <span
-              key={index}
-              className="py-2 text-xs font-semibold text-text/50"
-            >
-              {dia}
-            </span>
-          )
-        )}
+        {[
+          "D",
+          "S",
+          "T",
+          "Q",
+          "Q",
+          "S",
+          "S",
+        ].map((dia, index) => (
+          <span
+            key={index}
+            className="py-2 text-xs font-semibold text-text/50"
+          >
+            {dia}
+          </span>
+        ))}
 
         {celulas.map((dia, index) => {
           if (dia === null) {
-            return <span key={`vazio-${index}`} />;
+            return (
+              <span
+                key={`vazio-${index}`}
+              />
+            );
           }
 
-          const chave = `${ano}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+          const chave = `${ano}-${String(
+            mes + 1
+          ).padStart(2, "0")}-${String(
+            dia
+          ).padStart(2, "0")}`;
 
-          const temPratica = diasComPratica.has(chave);
+          const temPratica =
+            diasComPratica.has(chave);
 
           const ehHoje =
             dia === hoje.getDate() &&
@@ -256,12 +308,17 @@ function Calendario({ atividades }) {
 }
 
 export default function Home() {
-  const [sidebarAberta, setSidebarAberta] = useState(false);
+  const [sidebarAberta, setSidebarAberta] =
+    useState(false);
+
   const [resumo, setResumo] = useState(null);
   const [pacientes, setPacientes] = useState([]);
-  const [carregando, setCarregando] = useState(true);
+  const [carregando, setCarregando] =
+    useState(true);
+
   const [erro, setErro] = useState("");
-  const [atualizacao, setAtualizacao] = useState(0);
+  const [atualizacao, setAtualizacao] =
+    useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -276,36 +333,48 @@ export default function Home() {
           signal: controller.signal,
         };
 
-        const [respostaResumo, respostaPacientes] =
-          await Promise.all([
-            axios.get(
-              `${API_URL}/api/relatorios/resumo`,
-              config
-            ),
-            axios.get(
-              `${API_URL}/api/pacientes`,
-              {
-                ...config,
-                params: { ativo: "todos" },
-              }
-            ),
-          ]);
+        const [
+          respostaResumo,
+          respostaPacientes,
+        ] = await Promise.all([
+          axios.get(
+            `${API_URL}/api/relatorios/resumo`,
+            config
+          ),
+          axios.get(
+            `${API_URL}/api/pacientes`,
+            {
+              ...config,
+              params: {
+                ativo: "todos",
+              },
+            }
+          ),
+        ]);
 
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted) {
+          return;
+        }
 
-        const dadosPacientes = respostaPacientes.data;
+        const dadosPacientes =
+          respostaPacientes.data;
 
         setResumo(respostaResumo.data);
 
         setPacientes(
           Array.isArray(dadosPacientes)
             ? dadosPacientes
-            : Array.isArray(dadosPacientes?.pacientes)
+            : Array.isArray(
+                  dadosPacientes?.pacientes
+                )
               ? dadosPacientes.pacientes
               : []
         );
       } catch (error) {
-        if (axios.isCancel(error) || controller.signal.aborted) {
+        if (
+          axios.isCancel(error) ||
+          controller.signal.aborted
+        ) {
           return;
         }
 
@@ -328,8 +397,11 @@ export default function Home() {
     return () => controller.abort();
   }, [atualizacao]);
 
-  const semPraticaRecente = resumo?.inativos || [];
-  const atividadeSemanal = resumo?.por_dia || [];
+  const semPraticaRecente =
+    resumo?.inativos || [];
+
+  const atividadeSemanal =
+    resumo?.por_dia || [];
 
   const pacientesOrdenados = useMemo(() => {
     return [...pacientes].sort((a, b) =>
@@ -344,28 +416,36 @@ export default function Home() {
     return atividadeSemanal.map((item) => ({
       dia: item.dia,
       data: item.data,
-      minutos: Number(item.minutos) || 0,
-      tentativas: Number(item.tentativas) || 0,
+      minutos:
+        Number(item.minutos) || 0,
+      tentativas:
+        Number(item.tentativas) || 0,
     }));
   }, [atividadeSemanal]);
 
-  const totalTentativasSemana = dadosGrafico.reduce(
-    (total, item) => total + item.tentativas,
-    0
-  );
+  const totalTentativasSemana =
+    dadosGrafico.reduce(
+      (total, item) =>
+        total + item.tentativas,
+      0
+    );
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar
         isOpen={sidebarAberta}
-        onClose={() => setSidebarAberta(false)}
+        onClose={() =>
+          setSidebarAberta(false)
+        }
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-40">
           <Navbar
             onToggleMenu={() =>
-              setSidebarAberta((anterior) => !anterior)
+              setSidebarAberta(
+                (anterior) => !anterior
+              )
             }
           />
         </header>
@@ -373,26 +453,30 @@ export default function Home() {
         <main className="flex flex-col gap-6 bg-fundo px-4 py-5 font-jakarta text-text sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-
               <h1 className="mt-1 text-2xl font-semibold">
                 Visão geral
               </h1>
 
               <p className="mt-1 text-sm text-text/60">
-                Acompanhe seus pacientes e a prática
-                dos exercícios no Lolá.
+                Acompanhe seus pacientes e a
+                prática dos exercícios no Lolá.
               </p>
             </div>
 
             <button
               type="button"
               onClick={() =>
-                setAtualizacao((anterior) => anterior + 1)
+                setAtualizacao(
+                  (anterior) =>
+                    anterior + 1
+                )
               }
               disabled={carregando}
               className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-salmao shadow transition hover:bg-gray-100 disabled:opacity-50"
             >
-              {carregando ? "Atualizando..." : "Atualizar dados"}
+              {carregando
+                ? "Atualizando..."
+                : "Atualizar dados"}
             </button>
           </div>
 
@@ -406,7 +490,10 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() =>
-                  setAtualizacao((anterior) => anterior + 1)
+                  setAtualizacao(
+                    (anterior) =>
+                      anterior + 1
+                  )
                 }
                 className="mt-3 font-semibold underline"
               >
@@ -427,15 +514,20 @@ export default function Home() {
                 <Indicador
                   titulo="Pacientes cadastrados"
                   subtitulo="Total de cadastros"
-                  valor={resumo.total_cadastrados ?? 0}
+                  valor={
+                    resumo.total_cadastrados ??
+                    0
+                  }
                   icone={User}
-                  href="/pacientes"
+                  href="/paciente/pacientes"
                 />
 
                 <Indicador
                   titulo="Média de acertos"
                   subtitulo="Últimos 30 dias"
-                  valor={`${resumo.media_acertos ?? 0}%`}
+                  valor={`${
+                    resumo.media_acertos ?? 0
+                  }%`}
                   icone={Acerto}
                   href="/relatorios"
                   cor="bg-turquesa/10"
@@ -452,40 +544,59 @@ export default function Home() {
                   cor="bg-roxo/10"
                 />
 
-                <div className="flex min-h-44 flex-col justify-between gap-4 rounded-3xl bg-gradient-to-br from-salmao to-salmao/80 p-5 text-white shadow-lg sm:col-span-2">
+                <Link
+                  href="/paciente/pacientes"
+                  className="flex min-h-44 flex-col justify-between gap-4 rounded-3xl bg-gradient-to-br from-salmao to-salmao/80 p-5 text-white shadow-lg transition duration-200 hover:-translate-y-1 hover:shadow-xl sm:col-span-2"
+                >
                   <div>
                     <p className="text-base font-semibold">
                       Pacientes sem prática recente
                     </p>
 
                     <p className="mt-1 text-sm text-white/90">
-                      Crianças que não jogam há 7 dias ou mais
+                      Crianças que não jogam há
+                      7 dias ou mais
                     </p>
                   </div>
 
                   <div className="flex flex-wrap items-end justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <p className="text-5xl font-bold">
-                        {semPraticaRecente.length}
+                        {
+                          semPraticaRecente.length
+                        }
                       </p>
 
                       <div className="flex items-center pl-2">
                         {semPraticaRecente
                           .slice(0, 4)
-                          .map((paciente, index) => (
-                            <div
-                              key={paciente._id}
-                              className={`rounded-full border-2 border-salmao ${
-                                index > 0 ? "-ml-3" : ""
-                              }`}
-                            >
-                              <Avatar
-                                nome={paciente.nome}
-                                foto={paciente.foto_perfil}
-                                tamanho="h-11 w-11"
-                              />
-                            </div>
-                          ))}
+                          .map(
+                            (
+                              paciente,
+                              index
+                            ) => (
+                              <div
+                                key={
+                                  paciente._id
+                                }
+                                className={`rounded-full border-2 border-salmao ${
+                                  index > 0
+                                    ? "-ml-3"
+                                    : ""
+                                }`}
+                              >
+                                <Avatar
+                                  nome={
+                                    paciente.nome
+                                  }
+                                  foto={
+                                    paciente.foto_perfil
+                                  }
+                                  tamanho="h-11 w-11"
+                                />
+                              </div>
+                            )
+                          )}
                       </div>
                     </div>
 
@@ -495,7 +606,7 @@ export default function Home() {
                         : "Prática em dia"}
                     </span>
                   </div>
-                </div>
+                </Link>
               </section>
 
               <section className="grid grid-cols-1 gap-5 xl:grid-cols-5">
@@ -507,7 +618,8 @@ export default function Home() {
                       </h2>
 
                       <p className="mt-1 text-sm text-text/60">
-                        Minutos praticados nos últimos 7 dias
+                        Minutos praticados nos
+                        últimos 7 dias
                       </p>
                     </div>
 
@@ -543,27 +655,41 @@ export default function Home() {
                           dataKey="dia"
                           axisLine={false}
                           tickLine={false}
-                          tick={{ fontSize: 12 }}
+                          tick={{
+                            fontSize: 12,
+                          }}
                         />
 
                         <YAxis
                           axisLine={false}
                           tickLine={false}
                           allowDecimals={false}
-                          tick={{ fontSize: 12 }}
+                          tick={{
+                            fontSize: 12,
+                          }}
                           unit="min"
                         />
 
                         <Tooltip
-                          formatter={(valor) => [
+                          formatter={(
+                            valor
+                          ) => [
                             `${valor} min`,
                             "Tempo de prática",
                           ]}
-                          labelFormatter={(label, itens) => {
-                            const data = itens?.[0]?.payload?.data;
+                          labelFormatter={(
+                            label,
+                            itens
+                          ) => {
+                            const data =
+                              itens?.[0]
+                                ?.payload
+                                ?.data;
 
                             return data
-                              ? `${label} · ${formatarData(data)}`
+                              ? `${label} · ${formatarData(
+                                  data
+                                )}`
                               : label;
                           }}
                         />
@@ -571,7 +697,9 @@ export default function Home() {
                         <Bar
                           dataKey="minutos"
                           fill="#76D3CC"
-                          radius={[7, 7, 0, 0]}
+                          radius={[
+                            7, 7, 0, 0,
+                          ]}
                           maxBarSize={48}
                         />
                       </BarChart>
@@ -579,8 +707,9 @@ export default function Home() {
                   </div>
 
                   <p className="mt-3 text-xs text-text/50">
-                    {totalTentativasSemana} tentativas
-                    registradas nos últimos 7 dias.
+                    {totalTentativasSemana}{" "}
+                    tentativas registradas
+                    nos últimos 7 dias.
                   </p>
                 </div>
 
@@ -591,11 +720,16 @@ export default function Home() {
                     </h2>
 
                     <p className="mt-1 text-sm text-text/60">
-                      Dias com exercícios registrados
+                      Dias com exercícios
+                      registrados
                     </p>
                   </div>
 
-                  <Calendario atividades={atividadeSemanal} />
+                  <Calendario
+                    atividades={
+                      atividadeSemanal
+                    }
+                  />
                 </div>
               </section>
 
@@ -607,41 +741,56 @@ export default function Home() {
                     </h2>
 
                     <p className="mt-1 text-sm text-text/60">
-                      Pacientes com cadastro ativo que não
-                      jogaram nos últimos 7 dias.
+                      Pacientes com cadastro
+                      ativo que não jogaram
+                      nos últimos 7 dias.
                     </p>
                   </div>
 
                   {semPraticaRecente.length ? (
                     <div className="flex flex-col gap-3">
-                      {semPraticaRecente.map((paciente) => (
-                        <div
-                          key={paciente._id}
-                          className="flex items-center gap-3 rounded-2xl border border-gray-100 p-3"
-                        >
-                          <Avatar
-                            nome={paciente.nome}
-                            foto={paciente.foto_perfil}
-                          />
+                      {semPraticaRecente.map(
+                        (paciente) => (
+                          <div
+                            key={
+                              paciente._id
+                            }
+                            className="flex items-center gap-3 rounded-2xl border border-gray-100 p-3"
+                          >
+                            <Avatar
+                              nome={
+                                paciente.nome
+                              }
+                              foto={
+                                paciente.foto_perfil
+                              }
+                            />
 
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate font-semibold">
-                              {paciente.nome}
-                            </p>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate font-semibold">
+                                {
+                                  paciente.nome
+                                }
+                              </p>
 
-                            <p className="mt-1 text-xs text-text/60">
-                              {paciente.ultimo_treino
-                                ? `Última prática no período: ${formatarData(paciente.ultimo_treino)}`
-                                : "Sem prática registrada no período consultado"}
-                            </p>
+                              <p className="mt-1 text-xs text-text/60">
+                                {paciente.ultimo_treino
+                                  ? `Última prática no período: ${formatarData(
+                                      paciente.ultimo_treino
+                                    )}`
+                                  : "Sem prática registrada no período consultado"}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      )}
                     </div>
                   ) : (
                     <div className="rounded-2xl bg-turquesa/10 p-5 text-sm text-text/70">
-                      Todos os pacientes com cadastro ativo
-                      praticaram nos últimos 7 dias.
+                      Todos os pacientes
+                      com cadastro ativo
+                      praticaram nos
+                      últimos 7 dias.
                     </div>
                   )}
                 </div>
@@ -654,8 +803,8 @@ export default function Home() {
                       </h2>
 
                       <p className="mt-1 text-sm text-text/60">
-                        Maior tempo de prática no período
-                        analisado.
+                        Maior tempo de prática
+                        no período analisado.
                       </p>
                     </div>
 
@@ -667,12 +816,18 @@ export default function Home() {
                     </Link>
                   </div>
 
-                  {resumo.top_pacientes?.length ? (
+                  {resumo.top_pacientes
+                    ?.length ? (
                     <div className="flex flex-col gap-3">
                       {resumo.top_pacientes.map(
-                        (paciente, index) => (
+                        (
+                          paciente,
+                          index
+                        ) => (
                           <div
-                            key={paciente._id}
+                            key={
+                              paciente._id
+                            }
                             className="flex items-center gap-3 rounded-2xl border border-gray-100 p-3"
                           >
                             <span className="w-5 text-center font-semibold text-text/50">
@@ -680,24 +835,38 @@ export default function Home() {
                             </span>
 
                             <Avatar
-                              nome={paciente.nome}
-                              foto={paciente.foto_perfil}
+                              nome={
+                                paciente.nome
+                              }
+                              foto={
+                                paciente.foto_perfil
+                              }
                             />
 
                             <div className="min-w-0 flex-1">
                               <p className="truncate font-semibold">
-                                {paciente.nome}
+                                {
+                                  paciente.nome
+                                }
                               </p>
 
                               <p className="mt-1 text-xs text-text/60">
-                                {paciente.tentativas} tentativas
+                                {
+                                  paciente.tentativas
+                                }{" "}
+                                tentativas
                                 {" · "}
-                                {paciente.taxa_acerto}% de acertos
+                                {
+                                  paciente.taxa_acerto
+                                }
+                                % de acertos
                               </p>
                             </div>
 
                             <span className="shrink-0 font-semibold text-salmao">
-                              {formatarMinutos(paciente.minutos)}
+                              {formatarMinutos(
+                                paciente.minutos
+                              )}
                             </span>
                           </div>
                         )
@@ -705,7 +874,8 @@ export default function Home() {
                     </div>
                   ) : (
                     <p className="py-8 text-center text-text/60">
-                      Nenhuma prática registrada no período.
+                      Nenhuma prática
+                      registrada no período.
                     </p>
                   )}
                 </div>
@@ -719,13 +889,14 @@ export default function Home() {
                     </h2>
 
                     <p className="mt-1 text-sm text-text/60">
-                      Situação cadastral, independente
-                      da frequência nos jogos.
+                      Situação cadastral,
+                      independente da
+                      frequência nos jogos.
                     </p>
                   </div>
 
                   <Link
-                    href="/pacientes"
+                    href="/paciente/pacientes"
                     className="rounded-full bg-salmao px-4 py-2 text-sm font-medium text-white transition hover:bg-salmao/80"
                   >
                     Ver todos
@@ -755,56 +926,71 @@ export default function Home() {
                     </thead>
 
                     <tbody>
-                      {pacientesOrdenados.slice(0, 6).map(
-                        (paciente) => (
-                          <tr
-                            key={paciente._id}
-                            className="border-b border-text/5 last:border-0"
-                          >
-                            <td className="px-3 py-4">
-                              <Link
-                                href={`/pacientes/${paciente._id}`}
-                                className="flex items-center gap-3 hover:text-salmao"
-                              >
-                                <Avatar
-                                  nome={paciente.nome}
-                                  foto={paciente.foto_perfil}
-                                  tamanho="h-10 w-10"
-                                />
+                      {pacientesOrdenados
+                        .slice(0, 6)
+                        .map(
+                          (paciente) => (
+                            <tr
+                              key={
+                                paciente._id
+                              }
+                              className="border-b border-text/5 last:border-0"
+                            >
+                              <td className="px-3 py-4">
+                                <Link
+                                  href={`/paciente/detalhePaciente/${paciente._id}`}
+                                  className="flex items-center gap-3 hover:text-salmao"
+                                >
+                                  <Avatar
+                                    nome={
+                                      paciente.nome
+                                    }
+                                    foto={
+                                      paciente.foto_perfil
+                                    }
+                                    tamanho="h-10 w-10"
+                                  />
 
-                                <span className="font-medium">
-                                  {paciente.nome}{" "}
-                                  {paciente.sobrenome || ""}
+                                  <span className="font-medium">
+                                    {
+                                      paciente.nome
+                                    }{" "}
+                                    {paciente.sobrenome ||
+                                      ""}
+                                  </span>
+                                </Link>
+                              </td>
+
+                              <td className="px-3 py-4">
+                                {paciente.idade !=
+                                null
+                                  ? `${paciente.idade} anos`
+                                  : "—"}
+                              </td>
+
+                              <td className="px-3 py-4">
+                                {paciente.nivel_gravidade ||
+                                  "—"}
+                              </td>
+
+                              <td className="px-3 py-4">
+                                <span
+                                  className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+                                    paciente.ativo ===
+                                    false
+                                      ? "bg-gray-100 text-gray-700"
+                                      : "bg-green-100 text-green-700"
+                                  }`}
+                                >
+                                  {paciente.ativo ===
+                                  false
+                                    ? "Cadastro desativado"
+                                    : "Cadastro ativo"}
                                 </span>
-                              </Link>
-                            </td>
-
-                            <td className="px-3 py-4">
-                              {paciente.idade != null
-                                ? `${paciente.idade} anos`
-                                : "—"}
-                            </td>
-
-                            <td className="px-3 py-4">
-                              {paciente.nivel_gravidade || "—"}
-                            </td>
-
-                            <td className="px-3 py-4">
-                              <span
-                                className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-                                  paciente.ativo === false
-                                    ? "bg-gray-100 text-gray-700"
-                                    : "bg-green-100 text-green-700"
-                                }`}
-                              >
-                                {paciente.ativo === false
-                                  ? "Cadastro desativado"
-                                  : "Cadastro ativo"}
-                              </span>
-                            </td>
-                          </tr>
-                        )
-                      )}
+                              </td>
+                            </tr>
+                          )
+                        )}
 
                       {!pacientesOrdenados.length && (
                         <tr>
@@ -812,7 +998,8 @@ export default function Home() {
                             colSpan={4}
                             className="px-3 py-10 text-center text-text/60"
                           >
-                            Nenhum paciente cadastrado.
+                            Nenhum paciente
+                            cadastrado.
                           </td>
                         </tr>
                       )}
@@ -820,9 +1007,14 @@ export default function Home() {
                   </table>
                 </div>
 
-                {pacientesOrdenados.length > 6 && (
+                {pacientesOrdenados.length >
+                  6 && (
                   <p className="mt-4 text-right text-xs text-text/50">
-                    Exibindo 6 de {pacientesOrdenados.length} pacientes.
+                    Exibindo 6 de{" "}
+                    {
+                      pacientesOrdenados.length
+                    }{" "}
+                    pacientes.
                   </p>
                 )}
               </section>
