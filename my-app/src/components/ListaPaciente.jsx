@@ -7,10 +7,14 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { getAxiosConfig } from "@/services/auth";
 
-// assets
 import Eye from "@/assets/icons/eye.svg";
 import Editar from "@/assets/icons/editar.svg";
 import Excluir from "@/assets/icons/excluir.svg";
+
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000"
+).replace(/\/+$/, "");
 
 const ListaPaciente = ({
   id,
@@ -30,16 +34,13 @@ const ListaPaciente = ({
       setExcluindo(true);
 
       const response = await axios.delete(
-        `http://localhost:4000/api/pacientes/${id}`,
+        `${API_URL}/api/pacientes/${encodeURIComponent(id)}`,
         getAxiosConfig()
       );
 
       if (response.status >= 200 && response.status < 300) {
         setModalAberto(false);
-
-        // Atualiza a lista sem recarregar a página
         onExcluir?.(id);
-
         toast.success("Paciente excluído com sucesso!");
       }
     } catch (error) {
@@ -48,10 +49,19 @@ const ListaPaciente = ({
         error.response?.data || error
       );
 
-      toast.error(
-        error.response?.data?.error ||
-        "Erro ao excluir o paciente!"
-      );
+      if (error.response?.status === 401) {
+        toast.error("Sua sessão expirou. Entre novamente.");
+      } else if (error.response?.status === 403) {
+        toast.error("Você não tem permissão para excluir este paciente.");
+      } else if (error.response?.status === 404) {
+        toast.error("Paciente não encontrado ou rota de exclusão indisponível.");
+      } else {
+        toast.error(
+          error.response?.data?.error ||
+          error.response?.data?.message ||
+          "Erro ao excluir o paciente!"
+        );
+      }
     } finally {
       setExcluindo(false);
     }
@@ -136,7 +146,6 @@ const ListaPaciente = ({
             className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 sm:p-8 flex flex-col items-center gap-5"
             onClick={(e) => e.stopPropagation()}
           >
-           
             <div className="w-16 h-16 rounded-full bg-salmao/15 flex items-center justify-center">
               <img
                 src={Excluir.src || Excluir}
