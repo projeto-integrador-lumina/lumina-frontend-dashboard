@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -11,9 +12,12 @@ import Onboarding from "@/components/Onboarding";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
 
-const API_URL = "http://localhost:4000";
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000"
+).replace(/\/+$/, "");
 
-export default function LoginPage() {
+const LoginPage = () => {
   const router = useRouter();
 
   const [usuario, setUsuario] = useState("");
@@ -24,21 +28,21 @@ export default function LoginPage() {
   const [erro, setErro] = useState("");
   const [mensagem, setMensagem] = useState("");
 
-  function alterarUsuario(valor) {
+  const alterarUsuario = (valor) => {
     setUsuario(valor);
     setContaDesativada(false);
     setErro("");
     setMensagem("");
-  }
+  };
 
-  function alterarSenha(valor) {
+  const alterarSenha = (valor) => {
     setSenha(valor);
     setContaDesativada(false);
     setErro("");
     setMensagem("");
-  }
+  };
 
-  async function handleEntrar(evento) {
+  const handleEntrar = async (evento) => {
     evento.preventDefault();
 
     if (carregando || reativando) return;
@@ -63,12 +67,16 @@ export default function LoginPage() {
       }
 
       const respostaErro =
-        resultado?.error?.response || resultado?.response || resultado?.data;
+        resultado?.error?.response ||
+        resultado?.response ||
+        resultado?.data;
 
       const dadosErro = respostaErro?.data || respostaErro || {};
 
       const status =
-        respostaErro?.status || resultado?.status || resultado?.error?.status;
+        respostaErro?.status ||
+        resultado?.status ||
+        resultado?.error?.status;
 
       if (
         (status === 403 || dadosErro?.contaDesativada) &&
@@ -82,7 +90,7 @@ export default function LoginPage() {
       setErro(
         dadosErro?.error ||
           dadosErro?.message ||
-          "Falha ao fazer login. Verifique os dados e tente novamente.",
+          "Falha ao fazer login. Verifique os dados e tente novamente."
       );
     } catch (error) {
       console.error("Erro no login:", error);
@@ -100,14 +108,14 @@ export default function LoginPage() {
       setErro(
         dadosErro.error ||
           dadosErro.message ||
-          "Não foi possível entrar. Tente novamente.",
+          "Não foi possível entrar. Tente novamente."
       );
     } finally {
       setCarregando(false);
     }
-  }
+  };
 
-  async function handleReativar() {
+  const handleReativar = async () => {
     if (reativando || carregando) return;
 
     if (!usuario.trim() || !senha) {
@@ -126,23 +134,27 @@ export default function LoginPage() {
       });
 
       setContaDesativada(false);
+
       setMensagem(
-        "Sua conta foi reativada com sucesso! Agora você pode entrar normalmente.",
+        "Sua conta foi reativada com sucesso! Agora você pode entrar normalmente."
       );
 
       toast.success("Conta reativada com sucesso!");
     } catch (error) {
-      console.error("Erro ao reativar conta:", error);
+      console.error(
+        "Erro ao reativar conta:",
+        error.response?.data || error
+      );
 
       setErro(
         error.response?.data?.error ||
           error.response?.data?.message ||
-          "Não foi possível reativar sua conta. Verifique suas credenciais.",
+          "Não foi possível reativar sua conta. Verifique suas credenciais."
       );
     } finally {
       setReativando(false);
     }
-  }
+  };
 
   return (
     <main>
@@ -219,7 +231,9 @@ export default function LoginPage() {
                   placeholder="Digite o nome do usuário"
                   name="usuario"
                   autoComplete="username"
-                  onChange={(evento) => alterarUsuario(evento.target.value)}
+                  onChange={(evento) =>
+                    alterarUsuario(evento.target.value)
+                  }
                   value={usuario}
                 />
               </div>
@@ -231,7 +245,9 @@ export default function LoginPage() {
                   placeholder="Digite sua senha"
                   name="senha"
                   autoComplete="current-password"
-                  onChange={(evento) => alterarSenha(evento.target.value)}
+                  onChange={(evento) =>
+                    alterarSenha(evento.target.value)
+                  }
                   value={senha}
                 />
               </div>
@@ -274,4 +290,6 @@ export default function LoginPage() {
       </div>
     </main>
   );
-}
+};
+
+export default LoginPage;
