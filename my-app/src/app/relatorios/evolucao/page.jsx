@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
 import {
@@ -14,7 +14,6 @@ import {
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
 } from "recharts";
 
 import Navbar from "@/components/Navbar";
@@ -112,7 +111,7 @@ function Secao({ titulo, descricao, children }) {
   );
 }
 
-export default function RelatorioEvolucaoPage() {
+function ConteudoRelatorioEvolucao() {
   const searchParams = useSearchParams();
   const pacienteDaUrl = searchParams.get("id_paciente") || "";
 
@@ -125,8 +124,7 @@ export default function RelatorioEvolucaoPage() {
     id_paciente: pacienteDaUrl,
   });
   const [relatorio, setRelatorio] = useState(null);
-  const [carregandoPacientes, setCarregandoPacientes] =
-    useState(true);
+  const [carregandoPacientes, setCarregandoPacientes] = useState(true);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
 
@@ -385,7 +383,7 @@ export default function RelatorioEvolucaoPage() {
             >
               <img
                 src={Back.src || Back}
-                alt="voltar"
+                alt="Voltar"
                 className="w-5"
               />
             </a>
@@ -839,5 +837,21 @@ export default function RelatorioEvolucaoPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function RelatorioEvolucaoPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-fundo">
+          <p className="text-sm text-text/60">
+            Carregando evolução de acertos...
+          </p>
+        </div>
+      }
+    >
+      <ConteudoRelatorioEvolucao />
+    </Suspense>
   );
 }
