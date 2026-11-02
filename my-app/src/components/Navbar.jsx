@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -11,7 +12,10 @@ import Menu from "@/assets/icons/icon-menu-salmao.svg";
 import Pesquisar from "@/assets/icons/icon-search.svg";
 import Notificacao from "@/assets/icons/icon-notif.svg";
 
-const API_URL = "http://localhost:4000";
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000"
+).replace(/\/+$/, "");
 
 export default function Navbar({ onToggleMenu }) {
   const router = useRouter();
@@ -45,24 +49,32 @@ export default function Navbar({ onToggleMenu }) {
       setErroPesquisa(false);
 
       try {
-        const resposta = await axios.get(`${API_URL}/api/pacientes`, {
-          ...getAxiosConfig(),
-          signal: controller.signal,
-        });
+        const resposta = await axios.get(
+          `${API_URL}/api/pacientes`,
+          {
+            ...getAxiosConfig(),
+            signal: controller.signal,
+          }
+        );
 
         if (controller.signal.aborted) return;
 
         setPacientes(
           Array.isArray(resposta.data?.pacientes)
             ? resposta.data.pacientes
-            : [],
+            : []
         );
       } catch (error) {
         if (controller.signal.aborted) return;
 
         console.error("Erro na pesquisa:", error);
+
         setErroPesquisa(true);
-        toast.error("Não foi possível buscar os pacientes.");
+
+        toast.error(
+          error.response?.data?.error ||
+          "Não foi possível buscar os pacientes."
+        );
       } finally {
         if (!controller.signal.aborted) {
           setCarregando(false);
@@ -115,7 +127,12 @@ export default function Navbar({ onToggleMenu }) {
 
   function abrirPaciente(paciente) {
     fecharPesquisa();
-    router.push(`/paciente/pacientes?paciente=${paciente._id}`);
+
+    router.push(
+      `/paciente/pacientes?paciente=${encodeURIComponent(
+        paciente._id
+      )}`
+    );
   }
 
   function normalizar(texto) {
@@ -131,11 +148,16 @@ export default function Navbar({ onToggleMenu }) {
   const resultados = termoNormalizado
     ? pacientes
         .filter((paciente) => {
-          const nomeCompleto = [paciente.nome, paciente.sobrenome]
+          const nomeCompleto = [
+            paciente.nome,
+            paciente.sobrenome,
+          ]
             .filter(Boolean)
             .join(" ");
 
-          return normalizar(nomeCompleto).includes(termoNormalizado);
+          return normalizar(nomeCompleto).includes(
+            termoNormalizado
+          );
         })
         .slice(0, 6)
     : [];
@@ -164,7 +186,11 @@ export default function Navbar({ onToggleMenu }) {
         className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl transition hover:bg-gray-50 active:scale-95 lg:hidden"
         aria-label="Abrir menu"
       >
-        <img src={Menu.src || Menu} className="w-7" alt="" />
+        <img
+          src={Menu.src || Menu}
+          className="w-7"
+          alt=""
+        />
       </button>
 
       <div className="hidden min-w-0 flex-1 lg:block">
@@ -201,7 +227,10 @@ export default function Navbar({ onToggleMenu }) {
       </div>
 
       <div className="ml-auto flex min-w-0 items-center gap-2 sm:gap-4">
-        <div ref={areaPesquisaRef} className="relative flex items-center">
+        <div
+          ref={areaPesquisaRef}
+          className="relative flex items-center"
+        >
           <div
             className={`flex items-center gap-2 rounded-2xl border bg-gray-50 transition-all duration-200 ${
               pesquisaAberta
@@ -221,7 +250,11 @@ export default function Navbar({ onToggleMenu }) {
               className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center"
               aria-label="Pesquisar pacientes"
             >
-              <img src={Pesquisar.src || Pesquisar} className="w-5" alt="" />
+              <img
+                src={Pesquisar.src || Pesquisar}
+                className="w-5"
+                alt=""
+              />
             </button>
 
             <input
@@ -230,6 +263,7 @@ export default function Navbar({ onToggleMenu }) {
               value={termo}
               onChange={(evento) => {
                 setTermo(evento.target.value);
+
                 if (!pesquisaAberta) {
                   setPesquisaAberta(true);
                 }
@@ -238,7 +272,9 @@ export default function Navbar({ onToggleMenu }) {
               placeholder="Pesquisar pacientes..."
               aria-label="Pesquisar pacientes"
               className={`min-w-0 flex-1 bg-transparent text-sm text-text outline-none placeholder:text-text/40 ${
-                pesquisaAberta ? "block" : "hidden lg:block"
+                pesquisaAberta
+                  ? "block"
+                  : "hidden lg:block"
               }`}
             />
 
@@ -282,7 +318,10 @@ export default function Navbar({ onToggleMenu }) {
                 ) : (
                   <ul className="py-2">
                     {resultados.map((paciente) => {
-                      const nome = [paciente.nome, paciente.sobrenome]
+                      const nome = [
+                        paciente.nome,
+                        paciente.sobrenome,
+                      ]
                         .filter(Boolean)
                         .join(" ");
 
@@ -290,7 +329,9 @@ export default function Navbar({ onToggleMenu }) {
                         <li key={paciente._id}>
                           <button
                             type="button"
-                            onClick={() => abrirPaciente(paciente)}
+                            onClick={() =>
+                              abrirPaciente(paciente)
+                            }
                             className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition hover:bg-fundo"
                           >
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-salmao/15 font-semibold text-salmao">
@@ -307,7 +348,9 @@ export default function Navbar({ onToggleMenu }) {
                               </p>
                             </div>
 
-                            <span className="text-lg text-text/30">›</span>
+                            <span className="text-lg text-text/30">
+                              ›
+                            </span>
                           </button>
                         </li>
                       );
@@ -335,13 +378,19 @@ export default function Navbar({ onToggleMenu }) {
         <button
           type="button"
           onClick={() =>
-            toast("As notificações do painel ainda não estão disponíveis.")
+            toast(
+              "As notificações do painel ainda não estão disponíveis."
+            )
           }
           className="relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl transition hover:bg-gray-50"
           aria-label="Notificações"
           title="Notificações"
         >
-          <img src={Notificacao.src || Notificacao} className="w-5" alt="" />
+          <img
+            src={Notificacao.src || Notificacao}
+            className="w-5"
+            alt=""
+          />
         </button>
       </div>
     </div>
