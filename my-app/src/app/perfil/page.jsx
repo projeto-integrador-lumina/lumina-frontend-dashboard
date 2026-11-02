@@ -84,7 +84,7 @@ const Perfil = () => {
         setErro("");
 
         const response = await axios.get(
-          `${API_URL}/fonoaudiologos/me`,
+          `${API_URL}/api/fonoaudiologos/me`,
           getAxiosConfig(),
         );
 
