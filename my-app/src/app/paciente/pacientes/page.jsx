@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import axios from "axios";
@@ -19,7 +19,12 @@ import Back from "@/assets/icons/back.svg";
 import { getAxiosConfig } from "@/services/auth";
 import { getImageUrl } from "@/utils/page";
 
-export default function Pacientes() {
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000"
+).replace(/\/+$/, "");
+
+function ConteudoPacientes() {
   const searchParams = useSearchParams();
   const pacienteDaPesquisa = searchParams.get("paciente");
 
@@ -40,7 +45,7 @@ export default function Pacientes() {
 
       try {
         const resposta = await axios.get(
-          "http://localhost:4000/api/pacientes",
+          `${API_URL}/api/pacientes`,
           {
             ...getAxiosConfig(),
             signal: controller.signal,
@@ -148,12 +153,6 @@ export default function Pacientes() {
   }
 
   function limparPesquisa() {
-    window.history.replaceState(
-      null,
-      "",
-      "/paciente/pacientes"
-    );
-
     jaRolouRef.current = "";
   }
 
@@ -203,7 +202,10 @@ export default function Pacientes() {
                 alt=""
               />
 
-              <span className="sm:hidden">Cadastrar</span>
+              <span className="sm:hidden">
+                Cadastrar
+              </span>
+
               <span className="hidden sm:block">
                 Cadastrar Paciente
               </span>
@@ -229,9 +231,18 @@ export default function Pacientes() {
               {filtrosAbertos && (
                 <div className="absolute right-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-xl border border-gray-100 bg-white py-2 shadow-xl">
                   {[
-                    { valor: "todos", rotulo: "Todos" },
-                    { valor: "ativos", rotulo: "Ativos" },
-                    { valor: "inativos", rotulo: "Inativos" },
+                    {
+                      valor: "todos",
+                      rotulo: "Todos",
+                    },
+                    {
+                      valor: "ativos",
+                      rotulo: "Ativos",
+                    },
+                    {
+                      valor: "inativos",
+                      rotulo: "Inativos",
+                    },
                   ].map((opcao) => (
                     <button
                       key={opcao.valor}
@@ -374,5 +385,21 @@ export default function Pacientes() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function Pacientes() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-fundo">
+          <p className="text-sm text-text/60">
+            Carregando pacientes...
+          </p>
+        </div>
+      }
+    >
+      <ConteudoPacientes />
+    </Suspense>
   );
 }
