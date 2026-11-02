@@ -12,7 +12,11 @@ import Sidebar from "@/components/Sidebar";
 import { getAxiosConfig, logout } from "@/services/auth";
 import Back from "@/assets/icons/back.svg";
 
-const API_URL = "http://localhost:4000";
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000"
+).replace(/\/+$/, "");
+
 const CHAVE_PREFERENCIAS = "lola_preferencias_painel";
 
 const preferenciasIniciais = {

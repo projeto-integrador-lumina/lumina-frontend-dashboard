@@ -13,7 +13,10 @@ import { getImageUrl } from "@/utils/page";
 import Profile from "@/assets/profile.png";
 import Back from "@/assets/icons/back.svg";
 
-const API_URL = "http://localhost:4000/api";
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000"
+).replace(/\/+$/, "");
 
 const formatarData = (data) => {
   if (!data) return "Não informado";

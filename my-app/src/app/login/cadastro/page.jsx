@@ -10,7 +10,10 @@ import Onboarding from "@/components/Onboarding";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
 
-const API_URL = "http://localhost:4000/api";
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000"
+).replace(/\/+$/, "");
 
 export default function CadastroUsuario() {
   const router = useRouter();
