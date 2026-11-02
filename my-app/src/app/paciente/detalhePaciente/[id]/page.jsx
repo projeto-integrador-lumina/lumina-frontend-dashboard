@@ -1,9 +1,8 @@
 
 "use client";
-
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
 import {
@@ -15,7 +14,6 @@ import {
   YAxis,
   Tooltip,
 } from "recharts";
-
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Profile from "@/assets/profile.png";
@@ -23,50 +21,36 @@ import Back from "@/assets/icons/back.svg";
 import Editar from "@/assets/icons/editar.svg";
 import { getAxiosConfig } from "@/services/auth";
 import { getImageUrl } from "@/utils/page";
-
-const API_URL = "http://localhost:4000";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/+$/, "");
 const LISTA_URL = "/paciente/pacientes";
-
 function formatarTempo(valor) {
   const minutos = Number(valor) || 0;
-
   if (minutos < 60) {
     return `${Math.round(minutos)} min`;
   }
-
   const horas = Math.floor(minutos / 60);
   const restante = Math.round(minutos % 60);
-
   return restante
     ? `${horas}h ${restante}min`
     : `${horas}h`;
 }
-
 function formatarData(valor) {
   if (!valor) return "Não informado";
-
   const [ano, mes, dia] = String(valor)
     .slice(0, 10)
     .split("-");
-
   if (!ano || !mes || !dia) return "Não informado";
-
   return `${dia}/${mes}/${ano}`;
 }
-
 function calcularIdade(valor) {
   if (!valor) return "Não informado";
-
   const [ano, mes, dia] = String(valor)
     .slice(0, 10)
     .split("-")
     .map(Number);
-
   if (!ano || !mes || !dia) return "Não informado";
-
   const hoje = new Date();
   let idade = hoje.getFullYear() - ano;
-
   if (
     hoje.getMonth() + 1 < mes ||
     (hoje.getMonth() + 1 === mes &&
@@ -74,23 +58,18 @@ function calcularIdade(valor) {
   ) {
     idade--;
   }
-
   return `${idade} ${idade === 1 ? "ano" : "anos"}`;
 }
-
 function formatarCPF(valor) {
   const numeros = String(valor || "").replace(/\D/g, "");
-
   if (numeros.length !== 11) {
     return valor || "Não informado";
   }
-
   return numeros.replace(
     /(\d{3})(\d{3})(\d{3})(\d{2})/,
     "$1.$2.$3-$4"
   );
 }
-
 function Campo({ titulo, valor }) {
   return (
     <div>
@@ -101,7 +80,6 @@ function Campo({ titulo, valor }) {
     </div>
   );
 }
-
 function Indicador({ titulo, valor, descricao }) {
   return (
     <div className="rounded-2xl bg-white p-5 shadow-lg">
@@ -117,21 +95,16 @@ function Indicador({ titulo, valor, descricao }) {
     </div>
   );
 }
-
 export default function DetalhePaciente() {
-  const router = useRouter();
   const params = useParams();
-
   const id = Array.isArray(params?.id)
     ? params.id[0]
     : params?.id;
-
   const [sidebarAberta, setSidebarAberta] = useState(false);
   const [paciente, setPaciente] = useState(null);
   const [login, setLogin] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
-
   const [resumo, setResumo] = useState(null);
   const [atividade, setAtividade] = useState(null);
   const [fonemas, setFonemas] = useState([]);
@@ -140,7 +113,6 @@ export default function DetalhePaciente() {
   const [erroRelatorios, setErroRelatorios] = useState("");
   const [recarregarRelatorios, setRecarregarRelatorios] =
     useState(0);
-
   const [notas, setNotas] = useState([]);
   const [carregandoNotas, setCarregandoNotas] = useState(true);
   const [textoNota, setTextoNota] = useState("");
@@ -149,28 +121,21 @@ export default function DetalhePaciente() {
   const [excluindoNota, setExcluindoNota] = useState(null);
   const [mostrarTodasNotas, setMostrarTodasNotas] =
     useState(false);
-
   const [confirmarStatus, setConfirmarStatus] = useState(false);
   const [alterandoStatus, setAlterandoStatus] = useState(false);
-
-  const [confirmarSenha, setConfirmarSenha] = useState(false);
-  const [redefinindoSenha, setRedefinindoSenha] = useState(false);
-  const [novaSenha, setNovaSenha] = useState("");
-  const [mostrarSenha, setMostrarSenha] = useState(true);
-
+  const [gerandoPin, setGerandoPin] = useState(false);
+  const [pinGerado, setPinGerado] = useState("");
+  const [pinCriadoNestaSessao, setPinCriadoNestaSessao] = useState(false);
   useEffect(() => {
     if (!id) {
       setCarregando(false);
       setErro("Paciente não identificado.");
       return;
     }
-
     const controller = new AbortController();
-
     async function carregarPaciente() {
       setCarregando(true);
       setErro("");
-
       try {
         const resposta = await axios.get(
           `${API_URL}/api/pacientes/${encodeURIComponent(id)}`,
@@ -179,26 +144,20 @@ export default function DetalhePaciente() {
             signal: controller.signal,
           }
         );
-
         if (controller.signal.aborted) return;
-
         const dados = resposta.data?.paciente;
-
         if (!dados?._id) {
           throw new Error("Dados do paciente inválidos.");
         }
-
         setPaciente(dados);
         setLogin(resposta.data?.login || null);
       } catch (error) {
         if (controller.signal.aborted) return;
-
         const mensagem =
           error.response?.data?.error ||
           error.response?.data?.message ||
           error.message ||
           "Não foi possível carregar o paciente.";
-
         setErro(mensagem);
         toast.error(mensagem);
       } finally {
@@ -207,21 +166,15 @@ export default function DetalhePaciente() {
         }
       }
     }
-
     carregarPaciente();
-
     return () => controller.abort();
   }, [id]);
-
   useEffect(() => {
     if (!id) return;
-
     const controller = new AbortController();
-
     async function carregarRelatorios() {
       setCarregandoRelatorios(true);
       setErroRelatorios("");
-
       const config = {
         ...getAxiosConfig(),
         signal: controller.signal,
@@ -229,7 +182,6 @@ export default function DetalhePaciente() {
           id_paciente: id,
         },
       };
-
       try {
         const [respostaResumo, respostaAtividade, respostaFonema] =
           await Promise.all([
@@ -246,17 +198,13 @@ export default function DetalhePaciente() {
               config
             ),
           ]);
-
         if (controller.signal.aborted) return;
-
         setResumo(respostaResumo.data);
         setAtividade(respostaAtividade.data);
         setFonemas(respostaFonema.data?.fonemas || []);
       } catch (error) {
         if (controller.signal.aborted) return;
-
         console.error("Erro ao carregar desempenho:", error);
-
         setErroRelatorios(
           error.response?.data?.error ||
             error.response?.data?.message ||
@@ -268,20 +216,14 @@ export default function DetalhePaciente() {
         }
       }
     }
-
     carregarRelatorios();
-
     return () => controller.abort();
   }, [id, recarregarRelatorios]);
-
   useEffect(() => {
     if (!id) return;
-
     const controller = new AbortController();
-
     async function carregarNotas() {
       setCarregandoNotas(true);
-
       try {
         const resposta = await axios.get(
           `${API_URL}/api/pacientes/${encodeURIComponent(id)}/notas`,
@@ -290,13 +232,10 @@ export default function DetalhePaciente() {
             signal: controller.signal,
           }
         );
-
         if (controller.signal.aborted) return;
-
         setNotas(resposta.data?.notas || []);
       } catch (error) {
         if (controller.signal.aborted) return;
-
         toast.error("Não foi possível carregar as notas clínicas.");
       } finally {
         if (!controller.signal.aborted) {
@@ -304,12 +243,9 @@ export default function DetalhePaciente() {
         }
       }
     }
-
     carregarNotas();
-
     return () => controller.abort();
   }, [id]);
-
   const diasGrafico = useMemo(
     () =>
       (resumo?.por_dia || []).map((item) => ({
@@ -320,7 +256,6 @@ export default function DetalhePaciente() {
       })),
     [resumo]
   );
-
   const totalTentativas = useMemo(
     () =>
       (atividade?.dias || []).reduce(
@@ -330,7 +265,6 @@ export default function DetalhePaciente() {
       ),
     [atividade]
   );
-
   const tentativasPorFonema = useMemo(
     () =>
       fonemas.reduce(
@@ -340,25 +274,19 @@ export default function DetalhePaciente() {
       ),
     [fonemas]
   );
-
   const nomeCompleto = paciente
     ? [paciente.nome, paciente.sobrenome]
         .filter(Boolean)
         .join(" ")
     : "";
-
   const responsavel = paciente?.responsavel || {};
   const notasVisiveis = mostrarTodasNotas
     ? notas
     : notas.slice(0, 3);
-
   async function alterarStatus() {
     if (!paciente || alterandoStatus) return;
-
     const ativar = !paciente.ativo;
-
     setAlterandoStatus(true);
-
     try {
       const resposta = await axios.put(
         `${API_URL}/api/pacientes/${encodeURIComponent(id)}/${
@@ -367,14 +295,11 @@ export default function DetalhePaciente() {
         {},
         getAxiosConfig()
       );
-
       setPaciente((anterior) => ({
         ...anterior,
         ativo: ativar,
       }));
-
       setConfirmarStatus(false);
-
       toast.success(
         resposta.data?.message ||
           (ativar
@@ -390,47 +315,28 @@ export default function DetalhePaciente() {
       setAlterandoStatus(false);
     }
   }
+  async function gerarPin() {
+    if (!paciente?.ativo || gerandoPin || pinCriadoNestaSessao) return;
 
-  async function redefinirSenha() {
-    if (!paciente?.ativo || redefinindoSenha) return;
+    const numeros = new Uint32Array(1);
+    crypto.getRandomValues(numeros);
+    const pin = String(100000 + (numeros[0] % 900000));
 
-    setRedefinindoSenha(true);
+    setGerandoPin(true);
 
     try {
-      const resposta = await axios.post(
-        `${API_URL}/api/pacientes/${encodeURIComponent(id)}/resetar-senha`,
-        {},
+      await axios.put(
+        `${API_URL}/api/pacientes/${encodeURIComponent(id)}/pin`,
+        { pin },
         getAxiosConfig()
       );
-
-      const credenciais = resposta.data?.login;
-
-      if (!credenciais?.senha) {
-        toast.error(
-          "A senha foi redefinida, mas não foi retornada."
-        );
-        setConfirmarSenha(false);
-        return;
-      }
-
-      setLogin((anterior) => ({
-        ...anterior,
-        usuario: credenciais.usuario,
-        precisa_trocar_senha: true,
-      }));
-
-      setNovaSenha(credenciais.senha);
-      setMostrarSenha(true);
-      setConfirmarSenha(false);
-
-      toast.success("Nova senha provisória gerada!");
+      setPinGerado(pin);
+      setPinCriadoNestaSessao(true);
+      toast.success("PIN do responsável cadastrado!");
     } catch (error) {
-      toast.error(
-        error.response?.data?.error ||
-          "Não foi possível redefinir a senha."
-      );
+      toast.error(error.response?.data?.error || "Não foi possível cadastrar o PIN.");
     } finally {
-      setRedefinindoSenha(false);
+      setGerandoPin(false);
     }
   }
 
@@ -442,21 +348,15 @@ export default function DetalhePaciente() {
       toast.error("Não foi possível copiar.");
     }
   }
-
   async function salvarNota(evento) {
     evento.preventDefault();
-
     const texto = textoNota.trim();
-
     if (!texto) {
       toast.error("Escreva uma nota antes de salvar.");
       return;
     }
-
     if (texto.length > 3000 || salvandoNota) return;
-
     setSalvandoNota(true);
-
     try {
       if (notaEditando) {
         const resposta = await axios.put(
@@ -464,7 +364,6 @@ export default function DetalhePaciente() {
           { texto },
           getAxiosConfig()
         );
-
         setNotas((anteriores) =>
           anteriores.map((nota) =>
             nota._id === notaEditando
@@ -472,7 +371,6 @@ export default function DetalhePaciente() {
               : nota
           )
         );
-
         toast.success("Nota atualizada!");
       } else {
         const resposta = await axios.post(
@@ -480,15 +378,12 @@ export default function DetalhePaciente() {
           { texto },
           getAxiosConfig()
         );
-
         setNotas((anteriores) => [
           resposta.data.nota,
           ...anteriores,
         ]);
-
         toast.success("Nota adicionada!");
       }
-
       setTextoNota("");
       setNotaEditando(null);
     } catch (error) {
@@ -500,33 +395,26 @@ export default function DetalhePaciente() {
       setSalvandoNota(false);
     }
   }
-
   function editarNota(nota) {
     setNotaEditando(nota._id);
     setTextoNota(nota.texto);
     setMostrarTodasNotas(true);
   }
-
   async function excluirNota(notaId) {
     if (excluindoNota) return;
-
     setExcluindoNota(notaId);
-
     try {
       await axios.delete(
         `${API_URL}/api/pacientes/${encodeURIComponent(id)}/notas/${notaId}`,
         getAxiosConfig()
       );
-
       setNotas((anteriores) =>
         anteriores.filter((nota) => nota._id !== notaId)
       );
-
       if (notaEditando === notaId) {
         setNotaEditando(null);
         setTextoNota("");
       }
-
       toast.success("Nota excluída!");
     } catch (error) {
       toast.error(
@@ -537,14 +425,12 @@ export default function DetalhePaciente() {
       setExcluindoNota(null);
     }
   }
-
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar
         isOpen={sidebarAberta}
         onClose={() => setSidebarAberta(false)}
       />
-
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-40">
           <Navbar
@@ -553,7 +439,6 @@ export default function DetalhePaciente() {
             }
           />
         </header>
-
         <main className="flex flex-col gap-6 p-4 font-jakarta text-sm text-text md:p-8">
           <div className="flex items-center justify-between gap-4">
             <p className="hidden lg:block">
@@ -562,7 +447,6 @@ export default function DetalhePaciente() {
                 {nomeCompleto || "Detalhes"}
               </span>
             </p>
-
             <Link
               href={LISTA_URL}
               className="ml-auto flex h-10 w-10 items-center justify-center rounded-full bg-white shadow"
@@ -574,7 +458,6 @@ export default function DetalhePaciente() {
               />
             </Link>
           </div>
-
           {carregando ? (
             <div className="rounded-2xl bg-white p-10 text-center shadow-lg">
               Carregando paciente...
@@ -609,7 +492,6 @@ export default function DetalhePaciente() {
                           Profile.src || Profile;
                       }}
                     />
-
                     <div className="text-center sm:text-left">
                       <h1 className="text-xl font-semibold md:text-2xl">
                         {nomeCompleto}
@@ -628,11 +510,9 @@ export default function DetalhePaciente() {
                       </span>
                     </div>
                   </div>
-
                   <h2 className="mb-5 text-lg font-semibold">
                     Dados cadastrais
                   </h2>
-
                   <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                     <Campo
                       titulo="Nome"
@@ -677,7 +557,6 @@ export default function DetalhePaciente() {
                       valor={paciente.endereco}
                     />
                   </div>
-
                   <div className="mt-7 flex flex-wrap gap-3 border-t border-gray-100 pt-5">
                     {paciente.ativo && (
                       <Link
@@ -692,7 +571,6 @@ export default function DetalhePaciente() {
                         Editar paciente
                       </Link>
                     )}
-
                     <button
                       type="button"
                       onClick={() => setConfirmarStatus(true)}
@@ -704,12 +582,10 @@ export default function DetalhePaciente() {
                     </button>
                   </div>
                 </section>
-
                 <aside className="flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-lg sm:p-6">
                   <h2 className="text-lg font-semibold">
                     Notas clínicas
                   </h2>
-
                   {carregandoNotas ? (
                     <p className="text-text/60">
                       Carregando notas...
@@ -728,11 +604,9 @@ export default function DetalhePaciente() {
                           <p className="whitespace-pre-wrap break-words">
                             {nota.texto}
                           </p>
-
                           <p className="mt-2 text-xs text-text/50">
                             {formatarData(nota.createdAt)}
                           </p>
-
                           <div className="mt-3 flex gap-4">
                             <button
                               type="button"
@@ -741,7 +615,6 @@ export default function DetalhePaciente() {
                             >
                               Editar
                             </button>
-
                             <button
                               type="button"
                               disabled={
@@ -759,7 +632,6 @@ export default function DetalhePaciente() {
                           </div>
                         </div>
                       ))}
-
                       {notas.length > 3 && (
                         <button
                           type="button"
@@ -777,7 +649,6 @@ export default function DetalhePaciente() {
                       )}
                     </div>
                   )}
-
                   <form
                     onSubmit={salvarNota}
                     className="mt-auto flex flex-col gap-3 border-t border-gray-100 pt-4"
@@ -790,7 +661,6 @@ export default function DetalhePaciente() {
                         ? "Editar nota"
                         : "Nova nota"}
                     </label>
-
                     <textarea
                       id="texto-nota"
                       value={textoNota}
@@ -802,11 +672,9 @@ export default function DetalhePaciente() {
                       placeholder="Escreva uma observação clínica..."
                       className="w-full rounded-xl border border-gray-200 p-3 outline-none focus:border-turquesa"
                     />
-
                     <p className="text-right text-xs text-text/50">
                       {textoNota.length}/3000
                     </p>
-
                     <button
                       type="submit"
                       disabled={salvandoNota}
@@ -818,7 +686,6 @@ export default function DetalhePaciente() {
                           ? "Salvar edição"
                           : "Adicionar nota"}
                     </button>
-
                     {notaEditando && (
                       <button
                         type="button"
@@ -834,7 +701,6 @@ export default function DetalhePaciente() {
                   </form>
                 </aside>
               </div>
-
               <section className="rounded-2xl bg-white p-5 shadow-lg sm:p-6">
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -845,7 +711,6 @@ export default function DetalhePaciente() {
                       Indicadores reais registrados nas atividades.
                     </p>
                   </div>
-
                   <button
                     type="button"
                     disabled={carregandoRelatorios}
@@ -861,7 +726,6 @@ export default function DetalhePaciente() {
                       : "Atualizar dados"}
                   </button>
                 </div>
-
                 {erroRelatorios && (
                   <p
                     role="alert"
@@ -870,7 +734,6 @@ export default function DetalhePaciente() {
                     {erroRelatorios}
                   </p>
                 )}
-
                 {carregandoRelatorios && !resumo ? (
                   <p className="py-10 text-center text-text/60">
                     Carregando desempenho...
@@ -882,7 +745,6 @@ export default function DetalhePaciente() {
                       {formatarData(resumo.periodo?.de)} a{" "}
                       {formatarData(resumo.periodo?.ate)}
                     </p>
-
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                       <Indicador
                         titulo="Média de acertos"
@@ -893,7 +755,6 @@ export default function DetalhePaciente() {
                         }
                         descricao="Taxa de acertos no período"
                       />
-
                       <Indicador
                         titulo="Tempo de prática"
                         valor={formatarTempo(
@@ -901,13 +762,11 @@ export default function DetalhePaciente() {
                         )}
                         descricao="Tempo total no período"
                       />
-
                       <Indicador
                         titulo="Tentativas registradas"
                         valor={totalTentativas}
                         descricao="Exercícios realizados no período"
                       />
-
                       <Indicador
                         titulo="Tempo médio de prática"
                         valor={formatarTempo(
@@ -916,17 +775,14 @@ export default function DetalhePaciente() {
                         descricao="Por dia com atividade"
                       />
                     </div>
-
                     <div className="mt-6 grid gap-5 xl:grid-cols-[1.4fr_1fr]">
                       <div className="min-w-0 rounded-xl border border-gray-100 p-4 sm:p-5">
                         <h3 className="mb-2 font-semibold">
                           Prática nos últimos 7 dias
                         </h3>
-
                         <p className="mb-5 text-xs text-text/50">
                           Minutos de atividade por dia
                         </p>
-
                         <div className="h-64 w-full">
                           <ResponsiveContainer
                             width="100%"
@@ -967,7 +823,6 @@ export default function DetalhePaciente() {
                                 labelFormatter={(label, itens) => {
                                   const data =
                                     itens?.[0]?.payload?.data;
-
                                   return data
                                     ? `${label} - ${formatarData(data)}`
                                     : label;
@@ -983,16 +838,13 @@ export default function DetalhePaciente() {
                           </ResponsiveContainer>
                         </div>
                       </div>
-
                       <div className="rounded-xl border border-gray-100 p-4 sm:p-5">
                         <h3 className="font-semibold">
                           Desempenho por fonema
                         </h3>
-
                         <p className="mt-1 text-xs text-text/50">
                           Acertos e tentativas por fonema
                         </p>
-
                         {fonemas.length === 0 ? (
                           <p className="py-10 text-center text-text/50">
                             Nenhuma tentativa por fonema
@@ -1010,7 +862,6 @@ export default function DetalhePaciente() {
                                     {fonema.taxa_acerto}%
                                   </span>
                                 </div>
-
                                 <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
                                   <div
                                     className="h-full rounded-full bg-turquesa"
@@ -1027,7 +878,6 @@ export default function DetalhePaciente() {
                                     }}
                                   />
                                 </div>
-
                                 <div className="mt-2 flex justify-between gap-3 text-xs text-text/50">
                                   <span>
                                     {fonema.acertos} acertos de{" "}
@@ -1041,7 +891,6 @@ export default function DetalhePaciente() {
                             ))}
                           </div>
                         )}
-
                         <Link
                           href={`/relatorios/fonema?id_paciente=${encodeURIComponent(id)}`}
                           className="mt-6 inline-block font-semibold text-salmao hover:underline"
@@ -1050,7 +899,6 @@ export default function DetalhePaciente() {
                         </Link>
                       </div>
                     </div>
-
                     <div className="mt-5 flex flex-wrap gap-4">
                       <Link
                         href={`/relatorios/atividade?id_paciente=${encodeURIComponent(id)}`}
@@ -1058,7 +906,6 @@ export default function DetalhePaciente() {
                       >
                         Ver atividade diária
                       </Link>
-
                       <Link
                         href={`/relatorios/evolucao?id_paciente=${encodeURIComponent(id)}`}
                         className="font-semibold text-salmao hover:underline"
@@ -1073,62 +920,52 @@ export default function DetalhePaciente() {
                   </p>
                 )}
               </section>
-
-              <section className="rounded-2xl bg-white p-5 shadow-lg sm:p-6">
-                <h2 className="text-lg font-semibold">
-                  Acesso ao aplicativo
-                </h2>
-
-                <p className="mt-1 text-sm text-text/60">
-                  Gerencie as credenciais do paciente.
-                </p>
-
-                <div className="mt-5 rounded-xl bg-gray-50 p-4">
-                  <p className="text-xs text-text/50">
-                    USUÁRIO
+                              <section className="rounded-2xl bg-white p-5 shadow-lg sm:p-6">
+                  <h2 className="text-lg font-semibold">Acesso ao aplicativo</h2>
+                  <p className="mt-1 text-sm text-text/60">
+                    Consulte o usuário de login e cadastre o PIN de acesso às mensagens dos responsáveis.
                   </p>
-
-                  <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                    <p className="break-all font-semibold">
-                      {login?.usuario || "Não disponível"}
+                  <div className="mt-5 rounded-xl bg-gray-50 p-4">
+                    <p className="text-xs text-text/50">USUÁRIO</p>
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                      <p className="break-all font-semibold">{login?.usuario || "Não disponível"}</p>
+                      {login?.usuario && (
+                        <button type="button" onClick={() => copiarTexto(login.usuario, "Usuário")} className="font-semibold text-turquesa">
+                          Copiar usuário
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm text-text/60">
+                    A senha de login foi definida no cadastro e não pode ser consultada aqui.
+                  </p>
+                  <div className="mt-6 border-t border-gray-100 pt-5">
+                    <h3 className="font-semibold">PIN do responsável</h3>
+                    <p className="mt-2 text-sm text-text/60">
+                      Gere um PIN de 6 números para que os pais acessem as mensagens na Lolá. Copie e entregue o código com segurança.
                     </p>
-
-                    {login?.usuario && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          copiarTexto(
-                            login.usuario,
-                            "Usuário"
-                          )
-                        }
-                        className="cursor-pointer font-semibold text-turquesa"
-                      >
-                        Copiar
+                    {pinGerado ? (
+                      <div className="mt-4 rounded-xl bg-amber-50 p-4">
+                        <p className="text-xs font-semibold text-text/60">PIN CADASTRADO</p>
+                        <p className="mt-2 text-2xl font-bold tracking-[0.3em] text-text">{pinGerado}</p>
+                        <button type="button" onClick={() => copiarTexto(pinGerado, "PIN")} className="mt-3 rounded-xl bg-turquesa px-5 py-3 font-semibold">
+                          Copiar PIN
+                        </button>
+                        <p className="mt-3 text-xs text-text/60">
+                          Este PIN só ficará visível nesta sessão. Guarde-o antes de sair da página.
+                        </p>
+                      </div>
+                    ) : (
+                      <button type="button" disabled={!paciente.ativo || gerandoPin || pinCriadoNestaSessao} onClick={gerarPin} className="mt-4 rounded-xl bg-salmao px-5 py-3 font-semibold text-white disabled:opacity-50">
+                        {gerandoPin ? "Gerando PIN..." : "Gerar PIN do responsável"}
                       </button>
                     )}
                   </div>
-                </div>
-
-                <p className="mt-4 text-sm text-text/60">
-                  A senha atual não pode ser consultada.
-                  Você pode gerar uma nova senha provisória.
-                </p>
-
-                <button
-                  type="button"
-                  disabled={!paciente.ativo}
-                  onClick={() => setConfirmarSenha(true)}
-                  className="mt-4 cursor-pointer rounded-xl bg-salmao px-5 py-3 font-semibold text-white disabled:opacity-50"
-                >
-                  Redefinir senha
-                </button>
-              </section>
+                </section>
             </>
           )}
         </main>
       </div>
-
       {confirmarStatus && paciente && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
           <div
@@ -1141,13 +978,11 @@ export default function DetalhePaciente() {
                 ? "Desativar paciente?"
                 : "Reativar paciente?"}
             </h2>
-
             <p className="mt-3 text-text/60">
               {paciente.ativo
                 ? "O cadastro será preservado e poderá ser reativado depois."
                 : "O paciente voltará a ficar ativo no sistema."}
             </p>
-
             <div className="mt-6 flex gap-3">
               <button
                 type="button"
@@ -1157,7 +992,6 @@ export default function DetalhePaciente() {
               >
                 Cancelar
               </button>
-
               <button
                 type="button"
                 disabled={alterandoStatus}
@@ -1173,132 +1007,6 @@ export default function DetalhePaciente() {
         </div>
       )}
 
-      {confirmarSenha && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
-          >
-            <h2 className="text-xl font-semibold">
-              Redefinir senha?
-            </h2>
-
-            <p className="mt-3 text-text/60">
-              A senha atual deixará de funcionar.
-              Uma nova senha provisória será gerada.
-            </p>
-
-            <div className="mt-6 flex gap-3">
-              <button
-                type="button"
-                disabled={redefinindoSenha}
-                onClick={() => setConfirmarSenha(false)}
-                className="flex-1 rounded-xl border px-4 py-3"
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                disabled={redefinindoSenha}
-                onClick={redefinirSenha}
-                className="flex-1 rounded-xl bg-salmao px-4 py-3 font-semibold text-white disabled:opacity-50"
-              >
-                {redefinindoSenha
-                  ? "Gerando..."
-                  : "Confirmar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {novaSenha && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4">
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
-          >
-            <h2 className="text-xl font-semibold">
-              Nova senha gerada!
-            </h2>
-
-            <p className="mt-2 text-text/60">
-              Copie as credenciais antes de fechar.
-            </p>
-
-            <div className="mt-5 rounded-xl bg-gray-50 p-4">
-              <p className="text-xs text-text/50">
-                USUÁRIO
-              </p>
-
-              <p className="mt-2 break-all font-semibold">
-                {login?.usuario}
-              </p>
-
-              <button
-                type="button"
-                onClick={() =>
-                  copiarTexto(login?.usuario, "Usuário")
-                }
-                className="mt-2 font-semibold text-turquesa"
-              >
-                Copiar usuário
-              </button>
-            </div>
-
-            <div className="mt-3 rounded-xl bg-gray-50 p-4">
-              <p className="text-xs text-text/50">
-                SENHA PROVISÓRIA
-              </p>
-
-              <p className="mt-2 break-all font-semibold">
-                {mostrarSenha ? novaSenha : "••••••••"}
-              </p>
-
-              <div className="mt-2 flex gap-4">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setMostrarSenha((anterior) => !anterior)
-                  }
-                  className="font-semibold text-turquesa"
-                >
-                  {mostrarSenha ? "Ocultar" : "Mostrar"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    copiarTexto(novaSenha, "Senha")
-                  }
-                  className="font-semibold text-turquesa"
-                >
-                  Copiar senha
-                </button>
-              </div>
-            </div>
-
-            <p className="mt-4 rounded-xl bg-salmao/10 p-4 text-sm">
-              Esta senha será exibida somente agora.
-              Entregue-a apenas ao responsável autorizado.
-            </p>
-
-            <button
-              type="button"
-              onClick={() => {
-                setNovaSenha("");
-                setMostrarSenha(false);
-              }}
-              className="mt-5 w-full rounded-xl bg-turquesa px-5 py-3 font-semibold"
-            >
-              Já copiei as credenciais
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
