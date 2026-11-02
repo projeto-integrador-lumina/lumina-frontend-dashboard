@@ -20,7 +20,11 @@ import Back from "@/assets/icons/back.svg";
 import { getAxiosConfig } from "@/services/auth";
 import { getImageUrl } from "@/utils/page";
 
-const API_URL = "http://localhost:4000";
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000"
+).replace(/\/+$/, "");
+
 const LISTA_URL = "/paciente/pacientes";
 
 const TIPOS_FOTO = [

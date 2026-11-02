@@ -22,7 +22,10 @@ import Sidebar from "@/components/Sidebar";
 import { getAxiosConfig } from "@/services/auth";
 import Back from "@/assets/icons/back.svg";
 
-const API_URL = "http://localhost:4000";
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000"
+).replace(/\/+$/, "");
 
 function dataLocal(data) {
   const ano = data.getFullYear();

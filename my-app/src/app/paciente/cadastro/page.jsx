@@ -15,6 +15,7 @@ import Back from "@/assets/icons/back.svg";
 import Img from "@/assets/icons/img.svg";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/+$/, "");
+
 const TIPOS_FOTO = ["image/png", "image/jpeg", "image/webp"];
 const TAMANHO_MAX_FOTO = 10 * 1024 * 1024;
 const opcoesGravidade = [
