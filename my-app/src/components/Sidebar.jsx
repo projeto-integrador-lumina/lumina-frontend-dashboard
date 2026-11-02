@@ -19,7 +19,11 @@ import Perfil from "@/assets/icons/perfil.svg";
 import Config from "@/assets/icons/icon-config.svg";
 import Sair from "@/assets/icons/icon-exit.svg";
 
-const API_URL = "http://localhost:4000";
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:4000"
+).replace(/\/+$/, "");
+
 
 const relatorios = [
   {
