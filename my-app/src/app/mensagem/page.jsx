@@ -59,7 +59,7 @@ const Mensagem = () => {
       }
 
       const response = await axios.get(
-        `${API_URL}/mensagens`,
+        `${API_URL}/api/mensagens`,
         getAxiosConfig()
       );
 
@@ -90,7 +90,7 @@ const Mensagem = () => {
       }
 
       const response = await axios.get(
-        `${API_URL}/mensagens/${idPaciente}`,
+        `${API_URL}/api/mensagens/${idPaciente}`,
         getAxiosConfig()
       );
 
@@ -185,7 +185,7 @@ const Mensagem = () => {
       setEnviando(true);
 
       const response = await axios.post(
-        `${API_URL}/mensagens/${idPaciente}`,
+        `${API_URL}/api/mensagens/${idPaciente}`,
         { texto },
         getAxiosConfig()
       );
