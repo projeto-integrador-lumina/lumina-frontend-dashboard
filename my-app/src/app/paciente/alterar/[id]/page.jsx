@@ -70,30 +70,7 @@ function formatarCPF(valor) {
 function cpfValido(valor) {
   const cpf = somenteNumeros(valor);
 
-  if (!cpf) return true;
-  if (cpf.length !== 11) return false;
-  if (/^(\d)\1{10}$/.test(cpf)) return false;
-
-  let soma = 0;
-
-  for (let i = 0; i < 9; i++) {
-    soma += Number(cpf[i]) * (10 - i);
-  }
-
-  let digito = (soma * 10) % 11;
-  if (digito === 10) digito = 0;
-  if (digito !== Number(cpf[9])) return false;
-
-  soma = 0;
-
-  for (let i = 0; i < 10; i++) {
-    soma += Number(cpf[i]) * (11 - i);
-  }
-
-  digito = (soma * 10) % 11;
-  if (digito === 10) digito = 0;
-
-  return digito === Number(cpf[10]);
+  return cpf.length === 0 || cpf.length === 11;
 }
 
 function dataNascimentoValida(valor) {
