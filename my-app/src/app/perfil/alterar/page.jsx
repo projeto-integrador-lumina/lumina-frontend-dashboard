@@ -44,7 +44,7 @@ export default function EditarPerfil() {
     async function carregarPerfil() {
       try {
         const resposta = await axios.get(
-          `${API_URL}/fonoaudiologos/me`,
+          `${API_URL}/api/fonoaudiologos/me`,
           getAxiosConfig(),
         );
 
@@ -170,7 +170,7 @@ export default function EditarPerfil() {
       setSalvando(true);
 
       const resposta = await axios.put(
-        `${API_URL}/fonoaudiologos/me`,
+        `${API_URL}/api/fonoaudiologos/me`,
         dados,
         getAxiosConfig(),
       );
