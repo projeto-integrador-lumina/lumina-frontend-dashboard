@@ -73,6 +73,7 @@ const Perfil = () => {
   const [pacientesAtivos, setPacientesAtivos] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
+  //
   const [sidebarAberta, setSidebarAberta] = useState(false);
 
   useEffect(() => {
