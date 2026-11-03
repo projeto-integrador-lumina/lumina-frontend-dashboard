@@ -36,7 +36,7 @@ export default function EditarPerfil() {
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
-  const [menuAberto, setMenuAberto] = useState(false);
+  const [sidebarAberta, setSidebarAberta] = useState(false);
 
   useEffect(() => {
     let ativo = true;
@@ -199,7 +199,7 @@ export default function EditarPerfil() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-40">
-          <Navbar onToggleMenu={() => setMenuAberto((anterior) => !anterior)} />
+          <Navbar onToggleMenu={() => setSidebarAberta((anterior) => !anterior)} />
         </header>
 
         <main className="flex flex-col gap-8 p-4 font-jakarta text-text sm:p-6 lg:p-8 xl:p-10">
