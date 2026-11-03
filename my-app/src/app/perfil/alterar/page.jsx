@@ -15,8 +15,7 @@ import Profile from "@/assets/profile.png";
 import Back from "@/assets/icons/back.svg";
 
 const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:4000"
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
 ).replace(/\/+$/, "");
 
 const camposIniciais = {
@@ -37,6 +36,7 @@ export default function EditarPerfil() {
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
+  const [menuAberto, setMenuAberto] = useState(false);
 
   useEffect(() => {
     let ativo = true;
@@ -195,11 +195,11 @@ export default function EditarPerfil() {
 
   return (
     <div className="flex min-h-screen bg-[#f6f7fb]">
-      <Sidebar />
+      <Sidebar isOpen={sidebarAberta} onClose={() => setSidebarAberta(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-40">
-          <Navbar />
+          <Navbar onToggleMenu={() => setMenuAberto((anterior) => !anterior)} />
         </header>
 
         <main className="flex flex-col gap-8 p-4 font-jakarta text-text sm:p-6 lg:p-8 xl:p-10">

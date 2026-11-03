@@ -73,6 +73,7 @@ const Perfil = () => {
   const [pacientesAtivos, setPacientesAtivos] = useState(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
+  const [menuAberto, setMenuAberto] = useState(false);
 
   useEffect(() => {
     let ativo = true;
@@ -147,11 +148,13 @@ const Perfil = () => {
 
   return (
     <div className="flex min-h-screen bg-[#f6f7fb]">
-      <Sidebar />
+      <Sidebar isOpen={sidebarAberta} onClose={() => setSidebarAberta(false)} />
 
       <div className="flex flex-1 flex-col min-w-0">
         <header className="sticky top-0 z-40">
-          <Navbar />
+          <Navbar
+            onToggleMenu={() => setMenuAberto((anterior) => !anterior)}
+          />{" "}
         </header>
 
         <main className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8 xl:p-10 font-jakarta text-text">
